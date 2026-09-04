@@ -10,16 +10,24 @@ repo's own `CLAUDE.md`.
 Only commit (or push) when explicitly asked in that session. Finishing a
 task — even a large one — is not by itself a request to commit; leave
 changes in the working tree and say what's ready, then wait to be told to
-commit.
+commit. This does not apply to `.github/workflows/sync-from-plugin-docs.yml`'s
+own scheduled commits — that automation is the user's own infrastructure,
+running unattended by design, and its `docs-sync-bot` commits are not
+Claude acting in a session.
 
 # Documentation update policy
 
-This site's wording is a deliberately hand-edited, published version of the
-plugin's documentation — not something that should be silently regenerated
-or overwritten from `moodle-local_quizanalytics`'s `docs/guide/` (the two
-have already diverged in wording and structure). When the plugin's own
-documentation changes enough that this site would otherwise mislead a
-reader, update the relevant chapter page(s) here by hand, matching the
-plugin repo's own policy of updating docs only for changes big enough to
-matter — not for small self-contained bug fixes. See the plugin repo's
-`CLAUDE.md` for the fuller version of that rule.
+**`docs/guide/*.md` in [`moodle-local_quizanalytics`](https://github.com/ernestwting/moodle-local_quizanalytics)
+is the source of truth.** `.github/workflows/sync-from-plugin-docs.yml`
+pulls it on a schedule (and via manual dispatch), converts it with pandoc,
+and replaces the `<article>...</article>` body of the matching chapter
+page here — see `scripts/sync_docs.py` for the exact file mapping. Do not
+hand-edit a chapter page's `<article>` content directly; it will be
+overwritten by the next sync run. Edit `docs/guide/` in the plugin repo
+instead, following that repo's own documentation-update policy (its
+`CLAUDE.md`) for what counts as a big-enough change to update docs for.
+
+Outside the `<article>` block — the shared `assets/style.css`,
+`assets/nav.js`, `index.html`'s cover/TOC, and anything in `.github/` or
+`scripts/` — is this repo's own, not synced from anywhere, and edited
+directly here as normal.

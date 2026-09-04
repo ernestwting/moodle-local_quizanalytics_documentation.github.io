@@ -5,9 +5,8 @@ Published documentation site for [`local_quizanalytics`](https://github.com/erne
 quizzes.
 
 Plain static HTML/CSS (no build step, no Jekyll) — one page per chapter,
-mirroring the plugin's own PDF documentation exactly (see the PDF for the
-authoritative wording; this site is that content published as a browsable
-site). Math is rendered client-side via [KaTeX](https://katex.org/) (CDN).
+synced from the plugin repo's own `docs/guide/*.md` (see below). Math is
+rendered client-side via [KaTeX](https://katex.org/) (CDN).
 
 ## Structure
 
@@ -25,12 +24,22 @@ Source: Deploy from a branch → `main` / `(root)`**.
 
 ## Keeping this in sync with the plugin
 
-This site's content is a snapshot of the plugin's own documentation PDF as
-of the date it was published here. The plugin repository's own
-[`docs/guide/`](https://github.com/ernestwting/moodle-local_quizanalytics/tree/main/docs/guide)
-covers the same material in Markdown and is the place ongoing plugin
-changes get documented first. When plugin behavior changes enough to affect
-this site's wording, that update should be carried over here by hand (see
-`CLAUDE.md` in this repo) — the two are cross-linked, not auto-generated
-from one another, since this site's wording is deliberately hand-edited and
-should not be silently overwritten by an automated sync.
+This site's nine chapter pages are **automatically synced** from
+[`moodle-local_quizanalytics`](https://github.com/ernestwting/moodle-local_quizanalytics)'s
+own [`docs/guide/*.md`](https://github.com/ernestwting/moodle-local_quizanalytics/tree/main/docs/guide) —
+that Markdown is the real source of truth. A scheduled GitHub Action
+(`.github/workflows/sync-from-plugin-docs.yml`, every 6 hours, or trigger
+it by hand from the Actions tab) pulls the current Markdown, converts it
+with pandoc, and replaces each chapter page's `<article>` content —
+`scripts/sync_docs.py` has the exact file mapping. No secrets are
+involved: the source repo is public, and the workflow only ever pushes
+back to its own repo using the `GITHUB_TOKEN` Actions provides
+automatically.
+
+**Do not hand-edit a chapter page's `<article>` body** — the next sync run
+overwrites it. Edit `docs/guide/` in the plugin repo instead. `index.html`
+(the cover/TOC page), `assets/`, `.github/`, and `scripts/` are this
+repo's own and aren't touched by the sync.
+
+To preview what a sync would change before it runs, install `pandoc`
+locally and run `python3 scripts/sync_docs.py` from the repo root.
