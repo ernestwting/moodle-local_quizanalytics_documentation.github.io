@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy &amp; Security — STACK q-type Analytics Documentation</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+  <nav id="sidebar-mount"></nav>
+  <main>
+    <div class="content-col">
+      <div class="crumb"><a href="index.html">STACK q-type Analytics Docs</a> / Chapter 6</div>
+      <h1 class="page-title">Privacy &amp; Security</h1>
+
+      <article>
+        <p>This chapter documents exactly what this plugin does, and does not do, with student and course data, and reflects a direct audit of the codebase rather than a policy statement written separately from it.</p>
+
+        <h2 id="short-version">6.1 The short version</h2>
+        <p><strong>No student or course data ever leaves the Moodle server.</strong> Every computation runs in plain PHP, in process, reading directly from Moodle's own database. There is no analytics service to call, no telemetry, no third party SDK, and no code path anywhere in this plugin that makes an outbound network request.</p>
+
+        <h2 id="checked">6.2 What was checked</h2>
+        <p>A direct audit of every PHP and JavaScript file this plugin owns, excluding vendored third party libraries, found:</p>
+        <ul>
+          <li><strong>Zero outbound network calls.</strong> No <code>curl_*</code>, no <code>file_get_contents()</code> or <code>fopen()</code> against a URL, no <code>fsockopen</code>, no HTTP client library, and no <code>mail()</code> call anywhere in this plugin's own code.</li>
+          <li><strong>Zero external script or asset loading.</strong> Every JavaScript and CSS dependency, including Plotly.js, KaTeX, and TCPDF, is vendored locally inside the plugin, specifically so that no chart, no rendered maths, and no PDF generation step ever needs to reach a CDN.</li>
+          <li><strong>Zero telemetry, analytics, or error reporting integrations.</strong> No Sentry, Bugsnag, Google Analytics, Mixpanel, or anything similar; checked directly, never assumed absent.</li>
+          <li><strong>Zero registered Moodle web services.</strong> There is no <code>db/services.php</code> and no external function class anywhere in this plugin, so there is no API surface a token or third party integration could pull data through.</li>
+          <li><strong>Zero file storage of exported data.</strong> PDF exports stream straight from server memory to the requesting browser via Moodle's own <code>send_file()</code>, never written to Moodle's file storage, never given a public or guessable URL.</li>
+        </ul>
+        <p>The only way data leaves the server at all is a PDF that an authorised user explicitly clicks Download PDF for, and that PDF contains exactly the data they were already looking at on screen.</p>
+
+        <h2 id="who-can-see">6.3 Who can see what</h2>
+        <p>Every entry point this plugin exposes requires, in order:</p>
+        <ol>
+          <li><code>require_login($course)</code>: a valid, logged in session.</li>
+          <li><code>require_capability('local/quizanalytics:view', $context)</code>: a course context capability granted, by default, only to the editing teacher, teacher, and manager roles.</li>
+        </ol>
+        <p>That capability carries <code>RISK_PERSONAL</code> deliberately: this plugin shows individual students' response text, grades, and behavioural indicators across an entire course, and Moodle's own permission system is made to flag that risk level explicitly rather than leave it implicit. <strong>Students cannot see this plugin's pages at all.</strong> State changing actions are protected by <code>require_sesskey()</code>, Moodle's standard CSRF protection.</p>
+
+        <h2 id="stores">6.4 What this plugin stores</h2>
+        <p>Per its own Moodle privacy provider, <strong>this plugin stores no personal data of its own</strong>: it implements Moodle's <code>null_provider</code> interface:</p>
+        <ul>
+          <li>Every response, attempt, grade, and log event it reads comes live from tables Moodle core or <code>qtype_stack</code> already own, already covered by their own privacy providers.</li>
+          <li>The only local storage this plugin uses at all is Moodle's own MUC cache API, and only for Quiz Analytics and Question Analytics. Each cache entry is a disposable, purely derived recomputation, invalidated automatically the moment a relevant attempt changes.</li>
+          <li>Model Analytics's <em>trained</em> predictions, once an administrator enables and trains a model, are stored by Moodle core's own <code>core_analytics</code> component, already covered by core's own privacy provider.</li>
+        </ul>
+
+        <h2 id="anonymise">6.5 Anonymise mode: what it does and doesn't do</h2>
+        <p>The Anonymise student data toggle replaces every real student name with a stable pseudonym ("Student 1", "Student 2", &hellip;) and every email with <code>student&lt;N&gt;@anonymized.edu</code>, consistently across every table, chart, and PDF derived from that page load. <strong>What it's for:</strong> sharing a screenshot or PDF without real names visible in it. <strong>What it is not:</strong> an access control. It is a display layer substitution, computed fresh on every page load from the real underlying data. Anyone who already holds the viewing capability on that course can toggle it back off and see real names.</p>
+
+        <h2 id="responsible-use">6.6 Responsible use</h2>
+        <p>Model Analytics and Diagnostics Analytics compute statistical patterns from real behavioural data, worth reading with the same care the plugin's own interface states directly:</p>
+        <blockquote>
+          <p>These are statistical patterns, not proof of anything. An anomalous response time is a prompt to check in with a student, not evidence of misconduct on its own. Small courses will show noisier and less reliable readings simply because they have fewer data points to work from. Every number here describes what a student did in this course, not who they are.</p>
+        </blockquote>
+      </article>
+
+      <div class="page-nav">
+        <a href="calculations.html"><span class="dir">← Previous</span>5. How Everything Is Calculated</a>
+        <a class="next" href="architecture.html"><span class="dir">Next →</span>7. Architecture &amp; Design</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="assets/nav.js"></script>
+</body>
+</html>

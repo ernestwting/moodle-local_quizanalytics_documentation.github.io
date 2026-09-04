@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Started — STACK q-type Analytics Documentation</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+  <nav id="sidebar-mount"></nav>
+  <main>
+    <div class="content-col">
+      <div class="crumb"><a href="index.html">STACK q-type Analytics Docs</a> / Chapter 2</div>
+      <h1 class="page-title">Getting Started</h1>
+
+      <article>
+        <p>The fast path, for anyone who wants a report on screen before reading the rest of this document:</p>
+        <ol>
+          <li><strong>Download Zip.</strong> Download the most recent version's zip file from Moodle Marketplace.</li>
+          <li><strong>Install.</strong> Site administration → Plugins → Install plugins → upload the zip of this plugin. It unpacks to a single folder that becomes <code>local/quizanalytics</code>.</li>
+          <li><strong>Upgrade.</strong> Visit Site administration once more. This one step registers the viewing capability, the result caches, both prediction models (disabled), and the 15 minute cache warming scheduled task.</li>
+          <li><strong>Open a course</strong> that has at least one STACK question added directly to a quiz slot (not pulled in only via "random question from category"), with at least one finished attempt. Look for an <strong>STACK q-type Analytics</strong> entry in the course's secondary navigation, checking inside <strong>More</strong> if the bar is already full.</li>
+          <li>You land on <strong>Quiz Analytics</strong>, the coursewide view. Use the <strong>Section:</strong> switcher at the top to try Question Analytics and Model Analytics as well.</li>
+          <li>Try the <strong>Download PDF</strong> button on whichever view is showing.</li>
+        </ol>
+        <p>That is the whole loop. <a href="using.html">Chapter 4</a> walks through what each section actually shows and how to read it; <a href="installation.html">Chapter 3</a> covers every installation setting in full. The GitHub repo for this plugin can be found <a href="https://github.com/ernestwting/moodle-local_quizanalytics" target="_blank" rel="noopener">here</a>. The repo may contain a version in progress, so it is best to download the newest, stable version from Moodle Marketplace.</p>
+
+        <h2 id="tested-at">2.1 Tested at</h2>
+        <p>Rather than claim unlimited scale, this plugin has been directly benchmarked:</p>
+        <ul>
+          <li>A real production course: <strong>38 quizzes, 48,445 finished attempts, 200,000+ responses.</strong></li>
+          <li>A synthetic stress test: <strong>50 quizzes × 1,000 students</strong> (50,000 attempts total).</li>
+        </ul>
+        <p>See the project's <code>CHANGELOG.md</code> for the specific timings recorded at each scale, and <a href="installation.html">Chapter 3</a> for the settings that make a large course practical, including parallel cache warming workers and the on demand background compute safeguard.</p>
+
+        <h2 id="expect">2.2 What to expect on larger courses</h2>
+        <p>A course with a handful of STACK quizzes and a few dozen students will feel instant: open Analytics, and the report is simply there. A course with many students, many quizzes, and therefore tens or hundreds of thousands of individual responses is a different amount of work, and it is worth setting expectations honestly rather than pretending scale is free.</p>
+        <ul>
+          <li><strong>Where the time actually goes.</strong> Every graded response has to be read out of Moodle's own response summary text, parsed field by field, and classified before a single chart or indicator can be drawn from it (see <a href="calculations.html">Chapter 5</a> for exactly what that parsing involves). Model Analytics and Diagnostics Analytics add further work on top: an indicator computed per student or per question, a tree edit distance walked per submission, an ANOVA run per question's seed groups. None of this is wasted work, but it does scale with attempts and responses, not with course count.</li>
+          <li><strong>The first computation on a large course is the slow one, not every visit.</strong> Once a result is computed, it is cached, and every subsequent visit reads that cache instead of recomputing from scratch. The practical effect is that only a cold cache (a quiz nobody has viewed recently, or one that just received new attempts) is ever slow; a warm one is instant regardless of how large the course is.</li>
+        </ul>
+
+        <div class="callout">
+          <p>The 38 quiz, 48,445 attempt, 200,000+ response production course and the 50 quiz by 1,000 student synthetic stress test named above are exactly the scale this behaviour was built and measured against, not a hypothetical ceiling. See the project's <code>CHANGELOG.md</code> for the specific timings recorded at each scale, and Section 3.4 for the settings below that keep a large course practical.</p>
+        </div>
+
+        <h3 id="streamlined">2.2.1 How the computation is kept streamlined</h3>
+        <p>None of the mitigation here is exotic: it is ordinary server side engineering applied consistently, so that a teacher opening a report never has to wait on the full computation in real time.</p>
+        <ul>
+          <li><strong>Cache warming runs ahead of the teacher.</strong> A scheduled task, "Warm STACK q-type Analytics result caches," runs every 15 minutes via Moodle cron and precomputes Quiz Analytics and Question Analytics for every STACK quiz, so a teacher almost always lands on an already warm cache rather than triggering a live computation.</li>
+          <li><strong>Cache invalidation is cheap and precise.</strong> Each cache entry is keyed on a lightweight SQL fingerprint (attempt count, latest completion time, and summed grades) rather than a fixed expiry, so a cache stays valid, and free of recomputation, for as long as nothing about the underlying attempts has actually changed.</li>
+          <li><strong>Large courses warm in parallel, not one quiz at a time.</strong> The cache warming task can fork several worker processes, auto sized to the server's detected CPU and RAM, so a course with many quizzes warms them concurrently instead of serially.</li>
+          <li><strong>A slow cold request never blocks the browser.</strong> If a page is opened before its cache is warm and the computation is estimated to exceed the configured time budget (20 seconds by default), the work is handed to a background task instead of making the teacher's browser wait on it. The page shows "generating in the background" and rechecks itself automatically every 20 seconds until the real report is ready.</li>
+          <li><strong>Everything above runs on the Moodle server itself.</strong> There is no external analytics service to queue behind and no network round trip to add latency; speed is purely a function of the Moodle server's own resources, which the "Detected server resources" readout on the settings page is used to auto configure.</li>
+        </ul>
+        <p>Section 3.4 in the next chapter covers every one of these settings, its default, and when it is worth adjusting by hand.</p>
+      </article>
+
+      <div class="page-nav">
+        <a href="introduction.html"><span class="dir">← Previous</span>1. Introduction</a>
+        <a class="next" href="installation.html"><span class="dir">Next →</span>3. Installation &amp; Administration</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="assets/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Everything Is Calculated — STACK q-type Analytics Documentation</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+</head>
+<body>
+<div class="layout">
+  <nav id="sidebar-mount"></nav>
+  <main>
+    <div class="content-col">
+      <div class="crumb"><a href="index.html">STACK q-type Analytics Docs</a> / Chapter 5</div>
+      <h1 class="page-title">How Everything Is Calculated</h1>
+
+      <article>
+        <p>This is the chapter that matters most if you intend to actually rely on a number this plugin shows you. Every statistic, chart, indicator, and model is described here down to its formula, its data source, and, where one exists, the deliberate simplification behind it.</p>
+
+        <div class="callout">
+          <p>All of this runs on data already inside Moodle's own database. Nothing here is estimated from an external source or a model trained somewhere else. And a handful of calculations are documented simplifications, not silent approximations: each one is called out explicitly, with the reason behind it.</p>
+        </div>
+
+        <h2 id="data-source">5.1 Where the underlying data comes from</h2>
+        <p>Every response this plugin analyses is read straight out of Moodle's own quiz attempts table (finished attempts, by default), reached by joining quiz slots &rarr; question references &rarr; question bank entries &rarr; question versions &rarr; question, filtered to <code>qtype = 'stack'</code>. <strong>Only questions added directly to a quiz slot are detected</strong>: a STACK question pulled in only through "random question from category" is intentionally not counted, to keep the plugin's own navigation gating check fast. Each individual response is parsed from Moodle's own response summary text, the same string Moodle's built in "Responses" report already shows, produced by <code>question_usage_by_activity::get_response_summary()</code>. That string encodes both the submitted answer for every input field (<code>ansN: ...[valid|invalid|score]</code>) and each PRT's terminal outcome (<code>&lt;prtname&gt;: !</code> for a syntax error, or <code>&lt;prtname&gt;: # = &lt;fraction&gt;</code> for a graded result). Question text itself is rerendered through STACK's own CAS engine (<code>castext2_qa_processor</code>) rather than read as the raw stored <code>questiontext</code>, because the stored copy still contains unresolved <code>@variable@</code> placeholders that only STACK's own rendering step fills in.</p>
+
+        <h3 id="classification">5.1.1 How every response gets classified</h3>
+        <p>Every response falls into exactly one of five categories, checked in this order:</p>
+        <table>
+          <thead><tr><th>Order</th><th>Category</th><th>Condition</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Blank</td><td>No <code>ansN:</code> fields present at all.</td></tr>
+            <tr><td>2</td><td>Invalid</td><td>Any <code>ansN:</code> field is tagged <code>invalid</code>.</td></tr>
+            <tr><td>3</td><td>Ungraded</td><td>PRT fields exist, but none carries a fraction yet, or the underlying Moodle question state is <code>todo</code>, <code>complete</code>, or <code>needsgrading</code>.</td></tr>
+            <tr><td>4</td><td>Correct</td><td>The response's score equals exactly 1.0.</td></tr>
+            <tr><td>5</td><td>Incorrect</td><td>Anything not caught above.</td></tr>
+          </tbody>
+        </table>
+        <p>For a question with <em>M</em> parts, the score for a given response is the mean of each part's PRT fraction: a missing or null PRT part contributes 0, and is never simply excluded from the average:</p>
+        <div class="eq-block">\[ \text{score} = \frac{1}{M}\sum_{i=1}^{M}\text{fraction}_i \tag{5.1} \]</div>
+        <p><strong>Only correct and incorrect responses count as "graded"</strong> anywhere this plugin computes a facility, a percent correct figure, or an average score. This exclusion is deliberate: an earlier version of this plugin counted blank and ungraded responses, a question nobody had reached yet, for instance, as automatic failures, which measurably dragged down coursewide averages on real courses with zero attempt questions.</p>
+
+        <h3 id="pools">5.1.2 Two response pools</h3>
+        <p>Nearly every calculation in Quiz Analytics and Question Analytics draws on one of two distinct "pools" of response rows:</p>
+        <ul>
+          <li><strong>Pool A, participation.</strong> Every attempt, completely unfiltered. Behind invalid/blank rate, reattempt share, and anywhere retries themselves are the point (Solution Process Visualization, in particular).</li>
+          <li><strong>Pool B, performance.</strong> Exactly one attempt per student, their highest grade attempt, ties broken first by most recent completion, then by highest attempt number. Behind difficulty, discrimination, facility, and Question Review.</li>
+        </ul>
+
+        <h2 id="quiz-coursewide">5.2 Quiz Analytics: coursewide calculations</h2>
+        <h4>Summary of Quiz Stats</h4>
+        <p>Per quiz: the number of students, the mean grade, the <strong>sample variance</strong> of grade (divided by <em>n</em>&minus;1, since this is a sample of students, not a full population), the mean of each student's own best grade, the total attempt count, and the mean attempts per student.</p>
+        <div class="eq-block">\[ s^2 = \frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2 \tag{5.2} \]</div>
+
+        <h4>Quiz Grade Distribution</h4>
+        <p>A boxplot with one box per quiz, drawn over every grade in that quiz, with a marker overlaid at the quiz's mean, so it is easy to see whether the mean sits centrally or is being pulled by a skewed tail.</p>
+
+        <h4>Attempts vs. Grades scatter</h4>
+        <p>One point per student per quiz, plotted against whichever grade type is selected (average, highest, or minimum). The correlation reported alongside the chart is the standard Pearson correlation coefficient:</p>
+        <div class="eq-block">\[ r = \frac{\sum(x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum(x_i-\bar{x})^2\sum(y_i-\bar{y})^2}} \tag{5.3} \]</div>
+        <p>The dots on screen are nudged slightly: a small, deterministic offset seeded from a hash of the student and quiz, so the same student always lands in the same spot on every reload, purely so students who land on the exact same (attempt count, grade) coordinate do not render as one indistinguishable overlapping dot. <strong>This jitter only ever changes a pixel position; it never touches a computed value.</strong> The reported Pearson coefficient, and every other statistic on the page, is always computed from the true, unjittered numbers.</p>
+
+        <h4>Engagement Over Time</h4>
+        <p>A Gaussian kernel density estimate of when students started their attempts, one curve per quiz, using <strong>Scott's rule</strong> to choose the smoothing bandwidth, the same default that scipy and seaborn use:</p>
+        <div class="eq-block">\[ h = n^{-1/(d+4)}\,\sigma \qquad (d=1 \text{ for a single time dimension}) \tag{5.4} \]</div>
+        <p>This chart is omitted entirely, rather than shown misleadingly, if any quiz is missing timestamps or has fewer than two distinct attempt start dates.</p>
+
+        <h4>Line Graph of Various Metrics</h4>
+        <p>The same coursewide metrics as the stats table, plotted as a trend line across quizzes in <strong>chronological order</strong>: by each quiz's open date, falling back to creation order where an open date is not set, and never alphabetical order.</p>
+
+        <h2 id="question-perquiz">5.3 Question Analytics: per quiz calculations</h2>
+        <h4>Quiz snapshot</h4>
+        <p>Attempt counts and the overall average, read directly from Moodle's own attempt data (<code>AVG(sumgrades)</code>, rescaled exactly the way Moodle's Quiz Overview page does it): read, never independently recomputed.</p>
+
+        <h4>Question Response Overview</h4>
+        <p>One bar per question, showing the split between <em>correct</em>, <em>incorrect</em>, <em>invalid</em>, and <em>no response</em>, one row per student counting their most recently reached attempt. <strong>The mean mark shown is read directly from Moodle's own cached Facility Index</strong> (<code>quiz_statistics_report</code>) rather than recomputed, which is precisely why it always agrees with Quiz &rarr; Results &rarr; Statistics.</p>
+
+        <h4>Question Review</h4>
+        <p>Responses are grouped by <strong>instantiated variant</strong>: two attempts are only treated as "the same version" of a randomised question if both their rendered question text and their right answer text match exactly. Wrong responses within a version are tallied by exact text and sorted by frequency. A genuinely blank response is always labelled <code>(No response)</code>, never Moodle's raw internal bookkeeping text.</p>
+
+        <h4>Difficulty &amp; discrimination</h4>
+        <p>Fully computed but not currently surfaced on the simplified Question Analytics page (see <a href="#not-shown">Section 5.7</a>). Both use the classic <strong>Kelley 27% method</strong>: rank students by grade, then take the top and bottom 27% of the class (<code>round(0.27 &times; n)</code>, minimum one student each) as the "top" and "bottom" cohorts.</p>
+        <div class="eq-block">discrimination = (top cohort fraction at full credit) &minus; (bottom cohort fraction at full credit)&nbsp;&nbsp;(5.5)</div>
+        <p>Both the difficulty index and facility are computed over graded Pool B responses only.</p>
+
+        <h2 id="spv">5.4 Solution Process Visualization</h2>
+        <p>Fully implemented and reachable directly by URL, though not currently offered in the on screen view selector. This is the one part of the plugin that deliberately uses <strong>Pool A</strong> throughout, participation rather than just performance, because seeing every retry a student made is the entire point.</p>
+        <p><strong>Class Wide Transition Graph.</strong> For every STACK question, each student's ordered sequence of PRT outcomes across their own attempts is tallied into consecutive transition pairs, aggregated across the whole class. Node <code>"0"</code> means failed/no trace, <code>"c"</code> means full marks, and any other number is the specific PRT node an attempt terminated at. Edge width and colour scale with how often that transition occurred.</p>
+        <p><strong>Network Features per Node.</strong> In degree, out degree, and total degree for each node, normalised by dividing by (node count &minus; 1), so figures stay comparable across questions with different PRT sizes.</p>
+        <p><strong>PRT Distance 3D Chart.</strong> Plots the PRT node each attempt terminated at, per student, across their attempts. A response reaching no classifiable node is bucketed into a shared "other" sentinel distance placed <em>past</em> the worst real distance, deliberately, so "no attempt reached anything" is never visually mistaken for "a perfect score."</p>
+        <p><strong>Tree Edit Distance (TED) 3D Chart.</strong> Both the submitted CAS expression and the correct answer's expression are parsed into expression trees, and the tree edit distance algorithm published by Zhang and Shasha is computed between them: the minimum cost sequence of node insertions, deletions, and renames (cost 1 each) needed to transform one tree into the other. Displayed values are capped at 20 for readability, though the underlying comparison is not capped. A submission that cannot be parsed into a valid expression tree is excluded from the chart entirely, never shown as a 0 or an error state.</p>
+        <p><strong>Cross Attempt Comparison.</strong> Students with two or more qualifying attempts are classified as <strong>Improved</strong>, <strong>Regressed</strong>, or <strong>Flat</strong> by comparing their grade on their first attempt to their grade on their last: a change of &le; 0.000001 counts as flat, to absorb floating point noise.</p>
+        <p><strong>Credit to the following for the Solution Process Visualization and Tree Edit Distance:</strong> This work builds upon the solution process visualization methods introduced by Takada et al. [2], Kurihara and Nakamura [4], and Higuchi and Nakamura [5], as well as the tree edit distance feedback model developed by Neugebauer et al. [3].</p>
+
+        <h2 id="model-analytics">5.5 Model Analytics: the prediction models</h2>
+        <p>Both models are built on Moodle's own Analytics API, and both <strong>ship disabled by default</strong>. Until an administrator enables and trains one, everything below is a <em>live indicator reading only</em>.</p>
+
+        <h3 id="model1">5.5.1 Model 1: Student Risk &amp; Behaviour</h3>
+        <p><strong>Target</strong> (the thing being predicted): reused directly, unmodified, from Moodle core's own <code>course_gradetopass</code> target, asking whether this student's final grade will fall below the course's own grade to pass threshold. The only addition this plugin makes is an extra eligibility check requiring the course to actually contain a STACK activity. Five indicators feed that target, each required by the Analytics API to land in [&minus;1, 1], and each paired with a plain language explanation shown alongside it on screen:</p>
+        <table>
+          <thead><tr><th>Indicator</th><th>What it measures</th><th>How it's calculated</th></tr></thead>
+          <tbody>
+            <tr><td>Grade trajectory</td><td>This student's STACK scores against full marks</td><td>Mean grade across finished attempts, linearly rescaled from [0, max] to [&minus;1, 1].</td></tr>
+            <tr><td>Response latency anomaly</td><td>Implausibly <em>fast</em> answering vs. the class</td><td>A z score of the student's mean inter step gap against the course's own gap distribution, scaled by &divide;3 and negated (faster than cohort meaning positive, or "watch"). Only ever flags too fast; a slower than average student is never flagged.</td></tr>
+            <tr><td>Disengagement entropy</td><td>Mechanical looking submission timing, plus abandonment</td><td>Half weight on (1 &minus; normalized entropy) of inter step time gaps, half weight on the fraction of attempts abandoned.</td></tr>
+            <tr><td>Help seeking gap</td><td>Whether a student seeks help after a wrong answer as often as classmates</td><td>For every STACK failure, checks a lookback window (default 1 hour) for a forum/glossary/resource access; student's rate vs. course baseline.</td></tr>
+            <tr><td>Feedback revision distance</td><td>Whether an answer meaningfully changes after feedback</td><td>Normalised Levenshtein edit distance between consecutive tries at the same input, averaged and rescaled.</td></tr>
+          </tbody>
+        </table>
+        <p>The z score behind response latency anomaly:</p>
+        <div class="eq-block">\[ z = \frac{\Delta t_{\text{student}} - \mu_{\text{cohort}}}{\sigma_{\text{cohort}}} \tag{5.6} \]</div>
+        <p>The entropy term behind disengagement, Shannon entropy over binned inter attempt intervals:</p>
+        <div class="eq-block">\[ H = -\sum_i p_i \log_2 p_i \tag{5.7} \]</div>
+        <div class="callout">
+          <p>This is carried directly in the plugin's own code, not only in this documentation: response latency anomaly is described as "a correlational flag only, never evidence of misconduct on its own."</p>
+        </div>
+
+        <h3 id="model2">5.5.2 Model 2: Question &amp; PRT Quality</h3>
+        <p><strong>Target:</strong> a proxy label asking whether this question's empirical pass rate is below a threshold (50% by default, admin configurable). Computed as its own independent query, deliberately not by reusing the difficulty indicator's own number.</p>
+        <div class="callout">
+          <p><strong>Documented circularity caveat.</strong> The "needs review" flag and the difficulty indicator below both ultimately derive from the same underlying pass rate. Computing the target as a separate query avoids literally reusing one float value, but does not remove the underlying statistical circularity between them. Treat a "needs review" flag and a "difficult" reading on the same question as <strong>one signal, not two independent confirmations of each other</strong>.</p>
+        </div>
+        <table>
+          <thead><tr><th>Indicator</th><th>What it measures</th><th>How it's calculated</th></tr></thead>
+          <tbody>
+            <tr><td>Question difficulty</td><td>How hard the question is, empirically</td><td>Pass rate converted to a logit, clipped to &plusmn;3 logit units, scaled to [&minus;1, 1]. A classical test theory proxy, not a jointly fit two parameter IRT model (<a href="#simplifications">Section 5.5.3</a>).</td></tr>
+            <tr><td>Syntax error rate</td><td>Whether wrong answers are input mistakes rather than genuine maths mistakes</td><td>Of all failed attempts, the share whose final state was Moodle's <code>invalid</code> engine state.</td></tr>
+            <tr><td>Unreached PRT branches</td><td>How much marking logic has never actually fired</td><td>For every PRT branch (a node's true/false answer note), checks whether that text appears as a substring in any attempt's response summary; ratio of never matched branches.</td></tr>
+            <tr><td>Feedback ineffectiveness</td><td>Whether students improve after a wrong try, beyond a fresh baseline</td><td>Log odds of (improve rate on a subsequent quiz attempt after a wrong one) vs. (first attempt pass rate baseline), clipped to &plusmn;3, scaled to [&minus;1, 1].</td></tr>
+          </tbody>
+        </table>
+        <p>The difficulty logit transform:</p>
+        <div class="eq-block">\[ \text{logit}(p) = \ln\!\left(\frac{p}{1-p}\right) \xrightarrow{\text{clip to } [-3,3]} \xrightarrow{\text{scale}} [-1,1] \tag{5.8} \]</div>
+
+        <h3 id="simplifications">5.5.3 Documented simplifications</h3>
+        <p>Two indicators are explicit, intentional simplifications of a more rigorous design, not silent shortcuts. Both exist because the Analytics API's per sample indicator model, which computes one score independently per student or per question, has no hook for the batch step the fuller version would need:</p>
+        <ul>
+          <li><strong>Question difficulty</strong> uses a classical test theory pass rate to logit proxy instead of a full two parameter logistic IRT model,
+            <div class="eq-block">\[ P(\text{correct}\mid\theta) = c + \frac{1-c}{1+e^{-a(\theta-b)}}, \tag{5.9} \]</div>
+            jointly fit across every student's ability &theta; and every question's difficulty <em>b</em> and discrimination <em>a</em> simultaneously. That joint fit needs a batch calibration pass across the whole item bank, and nothing in the Analytics API's <code>calculate_sample()</code> contract provides a hook for one.</li>
+          <li><strong>Feedback ineffectiveness</strong> was originally designed to compare consecutive tries <em>within one question attempt</em>, matching STACK's own "interactive with multiple tries" behaviour, via a paired statistical test done per PRT branch. Under deferred feedback, the behaviour this plugin's own test courses actually use, where only the last step of an attempt is graded, that design produced zero signal, since there is no earlier graded try to compare against. It was redefined to compare a student's own repeated <em>quiz attempts</em> instead, and the per branch attribution was dropped for an aggregate log odds effect size, since Moodle only stores an attempt's current response summary, not the per step history a per branch test would need.</li>
+        </ul>
+        <p>The full design rationale behind every target/indicator/diagnostic split is covered in <a href="architecture.html">Chapter 7</a>.</p>
+
+        <h2 id="diagnostics-calc">5.6 Diagnostics Analytics</h2>
+        <p>Statistical reports, not model predictions, since neither has a natural ground truth label, so there is nothing to train or predict against.</p>
+
+        <h4>Seed bias</h4>
+        <p>A one way <strong>ANOVA</strong> of question score, grouped by the random seed Moodle assigned to that attempt (STACK's mechanism for randomising a question's numbers while keeping its underlying structure fixed). This reports:</p>
+        <ul>
+          <li>&eta;<sup>2</sup> (eta squared): the share of total score variance attributable to which seed a student happened to receive:
+            <div class="eq-block">\[ \eta^2 = \frac{SS_{\text{between}}}{SS_{\text{total}}} \tag{5.10} \]</div>
+          </li>
+          <li>Effect size magnitude, read against Cohen's conventional bands: below 0.01 negligible, below 0.06 small, below 0.14 medium, else large.</li>
+        </ul>
+        <div class="callout">
+          <p>This report <strong>deliberately does not compute an exact p value</strong>. Doing so correctly needs the regularized incomplete beta function or an F distribution CDF, which an explicit code comment describes as "a numerical routine easy to get subtly wrong without a reference implementation to check it against." &eta;<sup>2</sup> read against Cohen's thresholds is treated as sufficient for an exploratory dashboard.</p>
+        </div>
+
+        <h4>PRT branch coverage</h4>
+        <p>For every PRT branch, how many recorded attempts' response summaries actually contain that branch's answer note text:</p>
+        <table>
+          <thead><tr><th>Traversal count</th><th>Reading</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>"Never reached: pruning candidate."</td></tr>
+            <tr><td>1 to (floor &minus; 1)</td><td>"Low traffic: review before pruning" (floor default 2)</td></tr>
+            <tr><td>&ge; floor</td><td>"Adequately traversed."</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Not yet implemented</h4>
+        <p><strong>Concept dependency mapping</strong>, finding which questions' failures tend to predict failures on others, has a placeholder class but is not implemented. <a href="architecture.html">Chapter 7</a> frames it as offline sequence mining work, a better architectural fit outside a live dashboard page than an in process addition.</p>
+
+        <h2 id="not-shown">5.7 Implemented but not currently shown on screen</h2>
+        <ul>
+          <li><strong>Difficulty and discrimination indices, response outcome / valid and invalid breakdowns, and the student by question performance matrix heatmap</strong> are fully implemented and correct, but the simplified Question Analytics page introduced in version 3.0.0 shows only Question Response Overview and Question Review.</li>
+          <li><strong>The scatter plot's jitter</strong>: worth repeating, it only ever nudges a pixel position, never a computed value.</li>
+          <li><code>validation.php</code>'s grade audit. Every Question Analytics computation crosschecks its own calculated grade against Moodle's authoritative recorded grade for each attempt, flagging any mismatch of 0.01 or more, and specifically distinguishes a known STACK "validated but not regraded" quirk from a generic manual override explanation. This runs continuously as a built in correctness check, but is not currently surfaced as a user facing report.</li>
+        </ul>
+      </article>
+
+      <div class="page-nav">
+        <a href="using.html"><span class="dir">← Previous</span>4. Using STACK q-type Analytics</a>
+        <a class="next" href="privacy-security.html"><span class="dir">Next →</span>6. Privacy &amp; Security</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="assets/nav.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "\\[", right: "\\]", display: true},
+          {left: "\\(", right: "\\)", display: false}
+        ],
+        throwOnError: false
+      });
+    }
+  });
+</script>
+</body>
+</html>

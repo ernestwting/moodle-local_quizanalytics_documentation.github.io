@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installation &amp; Administration — STACK q-type Analytics Documentation</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+  <nav id="sidebar-mount"></nav>
+  <main>
+    <div class="content-col">
+      <div class="crumb"><a href="index.html">STACK q-type Analytics Docs</a> / Chapter 3</div>
+      <h1 class="page-title">Installation &amp; Administration</h1>
+
+      <article>
+        <h2 id="prereq">3.1 Prerequisites</h2>
+        <ul>
+          <li>Admin access to the Moodle site, plus shell or SFTP access to the codebase (not just the web UI) if you would rather not use the plugin uploader.</li>
+          <li>Moodle 4.0 or later.</li>
+          <li><code>mod_quiz</code> (core) and <code>qtype_stack</code> already installed.</li>
+          <li><strong>Moodle cron running on a real schedule.</strong> This is a hard requirement. The cache warming scheduled task and the on demand background compute safeguard for large courses both depend on <code>php admin/cli/cron.php</code> actually executing periodically. Without it, a large course's Analytics page will show "generating in the background" and simply never resolve. Confirm cron is running: Site administration → Server → Scheduled tasks should show recent "Last run" times, before relying on this plugin for anything beyond a small course.</li>
+        </ul>
+
+        <h2 id="placing">3.2 Placing the files</h2>
+        <p>This plugin's repository root <em>is</em> the plugin, so a plain "Download ZIP" can go straight into Moodle's plugin uploader. If you would rather do it by hand:</p>
+        <pre class="mono" style="display:block;background:var(--code-bg);padding:14px 16px;border-radius:6px;overflow-x:auto;">cp -r . &lt;moodleroot&gt;/local/quizanalytics
+chown -R www-data:www-data &lt;moodleroot&gt;/local/quizanalytics</pre>
+        <p>Either way, the folder must land at exactly <code>&lt;moodleroot&gt;/local/quizanalytics</code>, since Moodle derives the plugin's identity from that path. Plotly.js, KaTeX, and TCPDF are vendored inside the plugin already; there is no separate library download step.</p>
+
+        <h2 id="upgrade">3.3 Running the Moodle upgrade</h2>
+        <p>Log in as an administrator and visit Site administration. This single step:</p>
+        <ul>
+          <li>Registers the <code>local/quizanalytics:view</code> capability.</li>
+          <li>Registers the Quiz Analytics / Question Analytics result caches.</li>
+          <li>Registers <strong>Model 1</strong> ("Student at risk in a STACK based course") and <strong>Model 2</strong> ("STACK question/PRT needs review"), both created <em>disabled</em>.</li>
+          <li>Registers the "Warm STACK q-type Analytics result caches" scheduled task, which runs every 15 minutes.</li>
+        </ul>
+
+        <h2 id="performance">3.4 Performance settings</h2>
+        <p>Found at Site administration → Plugins → Local plugins → STACK q-type Analytics. Most of these auto configure themselves against your actual server on first install or upgrade, so treat this as a page to review, not one you need to hand tune on a normal install. These are the settings behind the load time behaviour described in Section 2.2.</p>
+        <table>
+          <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Detected server resources</td><td>(readout)</td><td>The CPU core / RAM count the plugin detected, and the cache warming worker count calculated from them.</td></tr>
+            <tr><td>Cache warming parallel workers</td><td>autodetected</td><td>How many worker processes the scheduled task forks to warm several quizzes' caches concurrently (CLI/cron only).</td></tr>
+            <tr><td>Cache warming worker memory limit</td><td>2048 MB</td><td>The PHP memory limit given to each worker. Size <em>workers × this value</em> comfortably under real available RAM.</td></tr>
+            <tr><td>On demand background compute time budget</td><td>20 s</td><td>If a cold cache request is estimated to exceed this, it is handed to a background task instead of blocking. Set to 0 to always compute inline.</td></tr>
+            <tr><td>Computation time limit</td><td>120 s</td><td>Raises PHP's own execution time limit for the coursewide view and PDF export only; it does not help a reverse proxy timeout in front of the site.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="models">3.5 Reviewing and enabling the prediction models</h2>
+        <p>Both Analytics API models appear at Site administration → Analytics → Models, disabled by default. Before turning either on:</p>
+        <ul>
+          <li>Review the related thresholds on the settings page above: the question needs review pass rate threshold (default 0.5), the "low traffic" PRT branch floor (default 2), and the help seeking lookback window (default 3,600 seconds).</li>
+          <li>Read the proxy label circularity caveat for Model 2, covered fully in <a href="calculations.html#model2">Section 5.5.2</a>.</li>
+          <li>A model needs training data before it predicts anything, so use <strong>Evaluate/Get predictions</strong> from the model's own page once enabled.</li>
+          <li>If those actions are missing, Moodle's "Restrict processing to CLI only" analytics setting is on; predictions still happen automatically via cron either way.</li>
+        </ul>
+
+        <h2 id="confirm">3.6 Confirming it is working</h2>
+        <ol>
+          <li>Site administration → Server → Scheduled tasks: "Warm STACK q-type Analytics result caches" should show a recent Last run.</li>
+          <li>Site administration → Server → Tasks → Task logs: filter for <code>local_quizanalytics</code>, confirm runs complete rather than fail.</li>
+          <li>This plugin's own settings page shows no cron status warning banner, and "Detected server resources" shows real numbers.</li>
+          <li>On a course/quiz large enough to exceed the background compute budget, you should see "generating in the background," not a timeout, and the real report a short while later on revisit.</li>
+        </ol>
+
+        <h2 id="troubleshooting">3.7 Troubleshooting quick reference</h2>
+        <table>
+          <thead><tr><th>Symptom</th><th>Likely cause</th></tr></thead>
+          <tbody>
+            <tr><td>"Analytics" doesn't appear anywhere</td><td>Plugin not installed, or no STACK quiz / no finished attempts</td></tr>
+            <tr><td>"No attempts yet"</td><td>No <code>state = finished</code> attempts for the quiz</td></tr>
+            <tr><td>A large course's view or PDF export times out</td><td>Raise the Computation time limit (Section 3.4)</td></tr>
+            <tr><td>Page returns a 524 / gateway timeout on a large course</td><td>A reverse proxy/CDN in front of the site is giving up before PHP does; confirm cron is actually running</td></tr>
+            <tr><td>"Generating in the background" never resolves</td><td>Cron isn't running, or the background task crashed or is stuck retrying: check the settings page's cron status banner, then Task logs</td></tr>
+            <tr><td>Charts render blank, JS console errors</td><td>Check for a 404 on <code>js/vendor/plotly.min.js</code> or <code>js/vendor/katex/*</code>; the plugin folder wasn't copied completely</td></tr>
+            <tr><td>Maths renders as literal <code>\(...\)</code> text</td><td><code>js/vendor/katex/fonts/</code> didn't come along; recopy the whole <code>js/vendor/katex/</code> folder</td></tr>
+            <tr><td>A model's Actions menu is missing Evaluate/Get predictions</td><td>The <code>onlycli</code> analytics setting is on</td></tr>
+          </tbody>
+        </table>
+        <p>Any bugs or issues, or suggestions can be opened <a href="https://github.com/ernestwting/moodle-local_quizanalytics/issues" target="_blank" rel="noopener">here</a>.</p>
+      </article>
+
+      <div class="page-nav">
+        <a href="getting-started.html"><span class="dir">← Previous</span>2. Getting Started</a>
+        <a class="next" href="using.html"><span class="dir">Next →</span>4. Using STACK q-type Analytics</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="assets/nav.js"></script>
+</body>
+</html>

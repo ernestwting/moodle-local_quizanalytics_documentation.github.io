@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using STACK q-type Analytics — Documentation</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="layout">
+  <nav id="sidebar-mount"></nav>
+  <main>
+    <div class="content-col">
+      <div class="crumb"><a href="index.html">STACK q-type Analytics Docs</a> / Chapter 4</div>
+      <h1 class="page-title">Using STACK q-type Analytics</h1>
+
+      <article>
+        <p>This plugin is visible to <strong>teachers, editing teachers, and managers only</strong>, never students, on any course with at least one STACK question added directly to a quiz slot. Reach it either from a course's secondary navigation (an <strong>Analytics</strong> entry, tucked inside <strong>More</strong> if the bar is full) or directly from a STACK quiz's own settings menu, which jumps straight to that quiz's Question Analytics. Every page carries a <strong>Section:</strong> switcher at the top for moving between Quiz Analytics, Question Analytics, and Model Analytics. A video guide to using this plugin can be found here.</p>
+
+        <h2 id="quiz">4.1 Quiz Analytics</h2>
+        <p>The coursewide view: every STACK quiz in the course, compared side by side. You will see an attempts versus grades scatter plot and aggregated difficulty/response distributions. The <strong>Compare attempts against:</strong> selector switches which grade type (average, highest, or minimum) the scatter plot uses. Two display toggles apply here and on Question Analytics:</p>
+        <ul>
+          <li><strong>Colourblind mode</strong> swaps every chart's palette for a colourblind safe set.</li>
+          <li><strong>Anonymise student data</strong> replaces every real name and email on screen, and in the PDF, with a stable pseudonym ("Student 1", "Student 2", &hellip;). This is purely a display option: it changes nothing about what is computed, persists nowhere, and does not restrict who can see the page. See <a href="privacy-security.html">Chapter 6</a> for exactly what this does and doesn't protect against.</li>
+        </ul>
+
+        <h2 id="question">4.2 Question Analytics</h2>
+        <p>Pick a quiz from the dropdown (defaults to the course's first STACK quiz) to see:</p>
+        <ul>
+          <li><strong>Quiz snapshot:</strong> attempt counts (finished, in progress, other) and the overall average, read straight from Moodle's own attempt data.</li>
+          <li><strong>Question Response Overview:</strong> one chart per question, sized to Moodle's own Facility Index and mean mark (the exact figures Quiz → Results → Statistics reports).</li>
+          <li><strong>Question Review:</strong> click into a question to see its expected answer and common response patterns, grouped by which instantiated variant a student actually received, with the question text rendered as genuine HTML.</li>
+        </ul>
+        <p><strong>Solution Process Visualization</strong>, comprising PRT transition graphs, network features, response tree distance charts, and cross attempt comparison, is fully implemented but temporarily not offered in the on screen View: selector, pending a redesign. It remains reachable directly at:</p>
+        <p class="mono" style="word-break:break-all;background:var(--code-bg);padding:10px 14px;border-radius:6px;">local/quizanalytics/questionanalytics.php?id=&lt;courseid&gt;&amp;quizid=&lt;quizid&gt;&amp;view=solutionprocess</p>
+
+        <h2 id="model">4.3 Model Analytics</h2>
+        <p>Use the <strong>View:</strong> selector to move between the two models. Both ship disabled by default, so until an administrator enables and trains one, what you are looking at is each indicator's live reading, not a trained prediction.</p>
+        <ul>
+          <li><strong>Model 1, Student Risk &amp; Behaviour.</strong> One row per enrolled student: their current grade status against the course's pass grade, and five behavioural indicators, each shown as a badge (Good, Typical, or Worth a look) with a one line plain English explanation.</li>
+          <li><strong>Model 2, Question &amp; PRT Quality.</strong> One row per STACK question, with the quiz it belongs to shown underneath: a pass rate based "needs review" flag, and four indicators.</li>
+        </ul>
+        <p><strong>A flag is a prompt to look, never proof of anything on its own.</strong></p>
+
+        <h2 id="diagnostics">4.4 Diagnostics Analytics</h2>
+        <p>Two statistical reports for question authors, not model predictions, since neither has a natural ground truth label to predict against. Not currently in the Section: switcher, but fully functional at:</p>
+        <p class="mono" style="word-break:break-all;background:var(--code-bg);padding:10px 14px;border-radius:6px;">local/quizanalytics/diagnosticsanalytics.php?id=&lt;courseid&gt;</p>
+        <ul>
+          <li><strong>Seed bias:</strong> a one way ANOVA across a question's random seeds, checking whether some randomised variants are unfairly harder or easier than others.</li>
+          <li><strong>PRT branch coverage:</strong> which of a question's PRT branches have actually been triggered by a real student answer.</li>
+        </ul>
+
+        <h2 id="pdf">4.5 PDF exports</h2>
+        <p>Every view in every section carries a <strong>Download PDF</strong> button. It rederives the same content server side (this is not a screenshot) into a downloadable, landscape oriented report. Quiz Analytics and Question Analytics embed the same charts you see on screen; Model Analytics and Diagnostics Analytics render the same tables as plain text. The file streams straight from the server to your browser; nothing is stored anywhere in the process.</p>
+
+        <h3 id="background">&ldquo;Generating in the background&rdquo;</h3>
+        <p>Large quizzes or courses hand their computation to a background task instead of making you wait on the page. Revisit the same page in a minute or two; the page itself rechecks automatically every 20 seconds. If this message is still showing after a genuinely long wait (fifteen minutes or more), see Section 3.7 of <a href="installation.html">Chapter 3</a> and flag it to your Moodle administrator.</p>
+      </article>
+
+      <div class="page-nav">
+        <a href="installation.html"><span class="dir">← Previous</span>3. Installation &amp; Administration</a>
+        <a class="next" href="calculations.html"><span class="dir">Next →</span>5. How Everything Is Calculated</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="assets/nav.js"></script>
+</body>
+</html>
