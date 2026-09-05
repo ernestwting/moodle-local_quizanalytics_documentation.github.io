@@ -15,47 +15,51 @@
       <h1 class="page-title">Using STACK q-type Analytics</h1>
 
       <article>
-        <p>This plugin is visible to <strong>teachers, editing teachers, and managers only</strong>, never students, on any course with at least one STACK question added directly to a quiz slot. Reach it either from a course's secondary navigation (an <strong>Analytics</strong> entry, tucked inside <strong>More</strong> if the bar is full) or directly from a STACK quiz's own settings menu, which jumps straight to that quiz's Question Analytics. Every page carries a <strong>Section:</strong> switcher at the top for moving between Quiz Analytics, Question Analytics, and Model Analytics. A video guide to using this plugin can be found here.</p>
-
-        <h2 id="quiz">4.1 Quiz Analytics</h2>
-        <p>The coursewide view: every STACK quiz in the course, compared side by side. You will see an attempts versus grades scatter plot and aggregated difficulty/response distributions. The <strong>Compare attempts against:</strong> selector switches which grade type (average, highest, or minimum) the scatter plot uses. Two display toggles apply here and on Question Analytics:</p>
-        <ul>
-          <li><strong>Colourblind mode</strong> swaps every chart's palette for a colourblind safe set.</li>
-          <li><strong>Anonymise student data</strong> replaces every real name and email on screen, and in the PDF, with a stable pseudonym ("Student 1", "Student 2", &hellip;). This is purely a display option: it changes nothing about what is computed, persists nowhere, and does not restrict who can see the page. See <a href="privacy-security.html">Chapter 6</a> for exactly what this does and doesn't protect against.</li>
-        </ul>
-
-        <h2 id="question">4.2 Question Analytics</h2>
-        <p>Pick a quiz from the dropdown (defaults to the course's first STACK quiz) to see:</p>
-        <ul>
-          <li><strong>Quiz snapshot:</strong> attempt counts (finished, in progress, other) and the overall average, read straight from Moodle's own attempt data.</li>
-          <li><strong>Question Response Overview:</strong> one chart per question, sized to Moodle's own Facility Index and mean mark (the exact figures Quiz → Results → Statistics reports).</li>
-          <li><strong>Question Review:</strong> click into a question to see its expected answer and common response patterns, grouped by which instantiated variant a student actually received, with the question text rendered as genuine HTML.</li>
-        </ul>
-        <p><strong>Solution Process Visualization</strong>, comprising PRT transition graphs, network features, response tree distance charts, and cross attempt comparison, is fully implemented but temporarily not offered in the on screen View: selector, pending a redesign. It remains reachable directly at:</p>
-        <p class="mono" style="word-break:break-all;background:var(--code-bg);padding:10px 14px;border-radius:6px;">local/quizanalytics/questionanalytics.php?id=&lt;courseid&gt;&amp;quizid=&lt;quizid&gt;&amp;view=solutionprocess</p>
-
-        <h2 id="model">4.3 Model Analytics</h2>
-        <p>Use the <strong>View:</strong> selector to move between the two models. Both ship disabled by default, so until an administrator enables and trains one, what you are looking at is each indicator's live reading, not a trained prediction.</p>
-        <ul>
-          <li><strong>Model 1, Student Risk &amp; Behaviour.</strong> One row per enrolled student: their current grade status against the course's pass grade, and five behavioural indicators, each shown as a badge (Good, Typical, or Worth a look) with a one line plain English explanation.</li>
-          <li><strong>Model 2, Question &amp; PRT Quality.</strong> One row per STACK question, with the quiz it belongs to shown underneath: a pass rate based "needs review" flag, and four indicators.</li>
-        </ul>
-        <p><strong>A flag is a prompt to look, never proof of anything on its own.</strong></p>
-
-        <h2 id="diagnostics">4.4 Diagnostics Analytics</h2>
-        <p>Two statistical reports for question authors, not model predictions, since neither has a natural ground truth label to predict against. Not currently in the Section: switcher, but fully functional at:</p>
-        <p class="mono" style="word-break:break-all;background:var(--code-bg);padding:10px 14px;border-radius:6px;">local/quizanalytics/diagnosticsanalytics.php?id=&lt;courseid&gt;</p>
-        <ul>
-          <li><strong>Seed bias:</strong> a one way ANOVA across a question's random seeds, checking whether some randomised variants are unfairly harder or easier than others.</li>
-          <li><strong>PRT branch coverage:</strong> which of a question's PRT branches have actually been triggered by a real student answer.</li>
-        </ul>
-
-        <h2 id="pdf">4.5 PDF exports</h2>
-        <p>Every view in every section carries a <strong>Download PDF</strong> button. It rederives the same content server side (this is not a screenshot) into a downloadable, landscape oriented report. Quiz Analytics and Question Analytics embed the same charts you see on screen; Model Analytics and Diagnostics Analytics render the same tables as plain text. The file streams straight from the server to your browser; nothing is stored anywhere in the process.</p>
-
-        <h3 id="background">&ldquo;Generating in the background&rdquo;</h3>
-        <p>Large quizzes or courses hand their computation to a background task instead of making you wait on the page. Revisit the same page in a minute or two; the page itself rechecks automatically every 20 seconds. If this message is still showing after a genuinely long wait (fifteen minutes or more), see Section 3.7 of <a href="installation.html">Chapter 3</a> and flag it to your Moodle administrator.</p>
-      </article>
+<p>How to use each of the four sections day to day, once the plugin is installed (see <a href="installation.html">Installation</a> if it isn't yet). This plugin is visible to <strong>teachers, editing teachers, and managers only</strong> — not students — on any course that has at least one STACK question added directly to a quiz slot.</p>
+<h2 id="getting-to-it">Getting to it</h2>
+<ul>
+<li><strong>From a course:</strong> open the course, look for an <strong>Analytics</strong> entry in the secondary navigation bar (<code>Course | Settings | Participants | Grades | Reports | ...</code> — check inside <strong>More</strong> if the bar is full). This lands you on Quiz Analytics.</li>
+<li><strong>From a quiz:</strong> open any STACK quiz directly and look in its own settings/administration menu for an <strong>Analytics</strong> entry — this jumps straight to that quiz's Question Analytics.</li>
+<li><strong>Switching sections:</strong> every page has a <strong>Section:</strong> switcher at the top — Quiz Analytics, Question Analytics, Model Analytics. (Diagnostics Analytics isn't in this switcher yet — see <a href="#diagnostics-analytics">§ Diagnostics Analytics</a> below.)</li>
+</ul>
+<p>If nothing appears at all, the most common reasons are: no STACK question added directly to a slot in that course, or no finished attempts yet.</p>
+<h2 id="quiz-analytics">Quiz Analytics</h2>
+<p>The course-wide view — every STACK quiz in the course, compared side by side. Shows an attempts-vs-grades scatter plot and aggregated difficulty/response distributions. Use the <strong>Compare attempts against:</strong> selector to switch which grade (average, highest, or minimum) the scatter plot compares attempt counts to.</p>
+<p>Two display toggles apply across this and Question Analytics:</p>
+<ul>
+<li><strong>Colorblind mode</strong> — swaps chart color palettes for a colorblind-safe set.</li>
+<li><strong>Anonymize student data</strong> — replaces every real student name/email on screen (and in the PDF) with a stable pseudonym ("Student 1", "Student 2", ...). This is a <strong>display option only</strong> — it doesn't change what's computed, doesn't persist anywhere, and doesn't restrict who can see the page; it's for taking a screenshot or PDF you want to share (e.g. in a department meeting) without real names in it. See <a href="privacy-security.html">Privacy &amp; Security</a> for what this does and doesn't protect against.</li>
+</ul>
+<h2 id="question-analytics">Question Analytics</h2>
+<p>Pick a quiz from the dropdown (defaults to the course's first STACK quiz) to see:</p>
+<ul>
+<li><strong>Quiz snapshot</strong> — attempt counts (finished/in-progress/other) and the overall average, read straight from Moodle's own attempt data.</li>
+<li><strong>Question Response Overview</strong> — one chart per question, sized to Moodle's own Facility Index and mean mark (the same numbers Quiz → Results → Statistics shows), not a separately-computed figure.</li>
+<li><strong>Question Review</strong> — click into a question to see its expected answer and common response patterns grouped by instantiated variant, with the question text rendered as real HTML.</li>
+</ul>
+<p><strong>Solution Process Visualization</strong> (PRT transition graphs, network features, response-tree distance charts, cross-attempt comparison) is fully implemented but temporarily not offered in the on-screen <strong>View:</strong> selector, pending a redesign. It's still reachable directly:</p>
+<pre><code>local/quizanalytics/questionanalytics.php?id=&lt;courseid&gt;&amp;quizid=&lt;quizid&gt;&amp;view=solutionprocess</code></pre>
+<h2 id="model-analytics">Model Analytics</h2>
+<p>Use the <strong>View:</strong> selector to switch between the two models. <strong>Both ship disabled by default</strong> — until an administrator enables and trains one (Site administration → Analytics → Models), what you see here is each indicator's <em>live reading</em>, computed directly from real attempt data, not a trained prediction. See <a href="calculations.html#model-analytics">How Everything Is Calculated</a> for the exact math behind every number on this page.</p>
+<ul>
+<li><strong>Model 1 — Student Risk &amp; Behavior.</strong> One row per enrolled student: their current grade status against the course's pass grade, and five behavioral indicators (grade trajectory, response-latency anomaly, disengagement, help-seeking gap, feedback-revision distance), each shown as a badge (Good / Typical / Worth a look) with a one-line plain-English explanation. Each student's name links to their Moodle profile (skipped when Anonymize mode is on).</li>
+<li><strong>Model 2 — Question &amp; PRT Quality.</strong> One row per STACK question, with the quiz it belongs to shown underneath: a pass-rate-based "needs review" flag, and four indicators (difficulty, syntax-error rate, unreached PRT branches, feedback ineffectiveness).</li>
+</ul>
+<p>Read the <strong>About this model</strong> panel on each view before acting on a flag — in particular, Model 2's "needs review" flag and its difficulty indicator both derive from the same underlying pass rate, so treat them as related signals, not independent confirmation of each other.</p>
+<p><strong>A flag is a prompt to look, never proof of anything on its own</strong> — see the "Responsible use" note shown on the page itself, and repeated in <a href="privacy-security.html#responsible-use">Privacy &amp; Security</a>.</p>
+<h2 id="diagnostics-analytics">Diagnostics Analytics</h2>
+<p>Two statistical reports for question authors — <strong>not</strong> model predictions, just direct calculations with no ground-truth label involved. Currently not in the <strong>Section:</strong> switcher (pending a redesign of how it's surfaced), but fully functional at:</p>
+<pre><code>local/quizanalytics/diagnosticsanalytics.php?id=&lt;courseid&gt;</code></pre>
+<ul>
+<li><strong>Seed bias</strong> — a one-way ANOVA across a question's random seeds, checking whether some randomized variants are unfairly harder or easier than others (so a low grade isn't just "you got the harder version").</li>
+<li><strong>PRT branch coverage</strong> — which of a question's PRT branches have actually been triggered by a real student answer. A branch that's never reached is either feedback nobody's needed yet, or dead logic worth simplifying.</li>
+</ul>
+<p>A "Worth a look" badge here is a prompt to open the question and check it still makes sense for how you designed it — not proof something is broken. Full formulas: <a href="calculations.html#diagnostics-analytics">How Everything Is Calculated</a>.</p>
+<h2 id="pdf-exports">PDF exports</h2>
+<p>Every view in every section has a <strong>Download PDF</strong> button. It re-derives the same content server-side (not a screenshot) into a downloadable, landscape-oriented report with checkboxes for which sections to include. Quiz Analytics/Question Analytics embed the same charts you see on screen; Model Analytics/Diagnostics Analytics render the same tables as plain text. The PDF streams straight from the server to your browser as a download — nothing is stored anywhere in the process. Large courses may take a while to generate; the page tells you to wait for the download rather than reload.</p>
+<h2 id="if-a-report-says-generating-in-the-background">If a report says "generating in the background"</h2>
+<p>Large quizzes/courses hand their computation to a background task instead of making you wait on the page. Revisit the same page in a minute or two and it should be ready — the page itself re-checks automatically every 20 seconds. If this message is still showing after a genuinely long wait (15+ minutes), that's a real problem, not normal — see <a href="installation.html#troubleshooting-quick-reference">Installation § Troubleshooting</a> and flag it to your Moodle administrator.</p>
+</article>
 
       <div class="page-nav">
         <a href="installation.html"><span class="dir">← Previous</span>3. Installation &amp; Administration</a>

@@ -15,36 +15,34 @@
       <h1 class="page-title">Introduction</h1>
 
       <article>
-        <p>If you teach with <a href="https://stack-assessment.org/" target="_blank" rel="noopener">STACK</a>, the CAS powered question type that lets a Moodle quiz mark genuine mathematics rather than pattern matched strings, you already have a great deal of data sitting in your gradebook that you probably never get to look at properly. Every attempt records not just a mark, but which Potential Response Tree (PRT) branch a student's answer landed on, how their input compared to the model answer, and how their performance compares to everyone else who received a differently seeded version of the same question. <strong>STACK q-type Analytics</strong> turns that raw material into something you can actually read: coursewide comparisons, per question breakdowns, two behavioural prediction models, and a pair of diagnostic reports built specifically for people who write STACK questions rather than just administer them. This is one plugin, not a suite you assemble yourself. Install <code>local_quizanalytics</code> and you get a single "Analytics" entry point in every course, with a section switcher at the top of the page moving between four distinct tools:</p>
-
-        <table>
-          <thead><tr><th>Section</th><th>What it answers</th></tr></thead>
-          <tbody>
-            <tr><td>Quiz Analytics</td><td>"How are my STACK quizzes doing, compared against each other, across the whole course?"</td></tr>
-            <tr><td>Question Analytics</td><td>"Inside this one quiz, which questions are students actually struggling with, and what are they typing?"</td></tr>
-            <tr><td>Model Analytics</td><td>"Which students might be heading for trouble, and which questions might have a marking problem worth a second look?"</td></tr>
-            <tr><td>Diagnostics Analytics</td><td>"Is one randomised version of this question unfairly harder than another, and which parts of my PRT logic has anyone ever actually triggered?"</td></tr>
-          </tbody>
-        </table>
-
-        <div class="callout">
-          <p>A design decision worth stating up front, because it shapes everything that follows: <strong>every number in this plugin is computed on the Moodle server itself, from data Moodle already owns.</strong> There is no separate analytics service, nothing is exported to run through an external model, and nothing is estimated by a black box you cannot inspect. If a figure on screen ever looks surprising, the explanation is meant to be findable: in this documentation, in the "About this model" panel next to the number itself, or in the plugin's own source. <a href="calculations.html">Chapter 5</a> exists specifically to make good on that promise, statistic by statistic.</p>
-        </div>
-
-        <h2 id="not">1.1 What this plugin deliberately is not</h2>
-        <ul>
-          <li><strong>Not a separate service.</strong> There is no analytics server to stand up, no Python process, no job queue. Every computation is plain PHP, running inside the same Moodle request, or the same Moodle cron run, that serves the page. Installing the plugin is the entire installation.</li>
-          <li><strong>Not a black box.</strong> Both prediction models ship <em>disabled</em> by default. Until an administrator deliberately reviews and trains one, Model Analytics shows each indicator's live reading: a real number, computed fresh from real attempt data, never a trained prediction dressed up as one.</li>
-          <li><strong>Not a data exporter.</strong> Nothing in this plugin makes an outbound network call of any kind. The only way information leaves the server at all is a PDF an authorised teacher explicitly downloads, and it contains exactly the data they were already looking at on screen. <a href="privacy-security.html">Chapter 6</a> covers this in full.</li>
-          <li><strong>Not a replacement for STACK's own grading.</strong> Every response is graded by STACK's own CAS engine, through the same question engine API your quiz already uses. This plugin reads the result of that grading; it never recomputes or second guesses it.</li>
-        </ul>
-
-        <h2 id="origin">1.2 Where this plugin came from</h2>
-        <p>Originally developed as a hackathon project in 2024 by Juma Zevick Otieno, this was a simple Streamlit application providing Quiz Analytics. That application can be viewed here. After that, Ernest Ting further developed the application, converting the Streamlit to PHP so it could be used in Moodle. As a result of this conversion, STACK q-type Analytics is the merger of two previously separate plugins that used to be installed independently: the original <code>local_quizanalytics</code>, which handled coursewide comparison and per quiz question analytics, and <code>local_stackanalytics</code>, which contributed the two Analytics API prediction models and the diagnostics dashboard that uses no machine learning at all. They now live under one component name, one capability, and one navigation entry. <a href="architecture.html">Chapter 7</a> has the full account of why the two prediction models are built the way they are, including a research style discussion of why some of the eleven behaviours this plugin originally set out to detect became <em>predictions</em>, some became <em>evidence feeding a prediction</em>, and some became <em>plain statistical reports kept deliberately outside the machine learning pipeline</em>.</p>
-
-        <h2 id="requirements">1.3 Requirements</h2>
-        <p>This plugin has nothing to analyse without the STACK question type (<code>qtype_stack</code>) already installed, so install that first. Beyond that, you need Moodle 4.0 or later and, critically, a working Moodle cron. Cron is not a performance nicety here: cache warming for large courses and the on demand background compute safeguard both depend on it running on schedule. <a href="installation.html">Chapter 3</a> explains exactly why, and how to verify it.</p>
-      </article>
+<p><strong>STACK q-type Analytics</strong> is a Moodle <code>local_</code> plugin that turns STACK (Maxima CAS) quiz activity into analytics for teachers and question authors: course-wide statistics, per-quiz drill-downs, two Analytics-API prediction models, and diagnostic reports — all computed in plain PHP, in-process, on the Moodle server itself.</p>
+<h2 id="what-it-is">What it is</h2>
+<p>One installable plugin, four sections, reached from a single "Analytics" entry in a course's navigation:</p>
+<ul>
+<li><strong>Quiz Analytics</strong> — course-wide, cross-quiz comparison.</li>
+<li><strong>Question Analytics</strong> — a single quiz's response statistics and review, plus a currently-hidden Solution Process Visualization view (PRT transition graphs, response-tree distance charts).</li>
+<li><strong>Model Analytics</strong> — Model 1 ("student at risk") and Model 2 ("question/PRT needs review"), both Moodle Analytics API models.</li>
+<li><strong>Diagnostics Analytics</strong> — seed-bias and PRT branch-coverage reports, deliberately kept outside the prediction pipeline since they have no natural ground-truth label to predict against.</li>
+</ul>
+<p>See <a href="calculations.html">How Everything Is Calculated</a> for exactly what each of these computes, and <a href="using.html">Instructor Guide</a> for how to use them day to day.</p>
+<h2 id="what-it-deliberately-is-not">What it deliberately is not</h2>
+<ul>
+<li><strong>Not a separate service.</strong> There is no analytics server, no Python process, no queue to run — every computation is plain PHP running inside the same Moodle request (or the same Moodle cron run) that serves the page. Installing the plugin is the entire install.</li>
+<li><strong>Not a black box.</strong> Both Analytics API models ship <strong>disabled</strong> by default. Until an administrator reviews and enables one, Model Analytics shows each indicator's <em>live reading</em> — a real number computed from real attempt data — never a trained AI prediction dressed up as one.</li>
+<li><strong>Not a data exporter.</strong> Nothing in this plugin makes an outbound network call. The only way data leaves the server at all is a PDF an authorized teacher or manager explicitly downloads to their own browser — the exact same data they were already looking at on screen. See <a href="privacy-security.html">Privacy &amp; Security</a>.</li>
+<li><strong>Not a replacement for STACK's own grading.</strong> Every response is graded through STACK's own CAS engine (<code>qtype_stack</code>'s question-engine API) — this plugin reads the result, it never recomputes or second-guesses a grade.</li>
+</ul>
+<h2 id="where-it-came-from">Where it came from</h2>
+<p>This plugin is the merger of two previously separate, independently installed Moodle plugins:</p>
+<ul>
+<li><strong><code>local_quizanalytics</code></strong> (the original) — course-wide comparison, per-quiz Question Analytics, and Solution Process Visualization.</li>
+<li><strong><code>local_stackanalytics</code></strong> — the Analytics API models (Model 1, Model 2) and the non-ML Diagnostics Dashboard.</li>
+</ul>
+<p>They now ship as one plugin, under <code>local_quizanalytics</code>'s own component name, with one capability and one navigation entry — a teacher installs one plugin and sees one "Analytics" link, rather than finding, installing, and using two unrelated ones. The full account of the merge, including why the plugin's own name changed twice along the way, is in <a href="architecture.html">Architecture &amp; Design</a>.</p>
+<h2 id="status">Status</h2>
+<p><strong>Stable</strong> as of v3.0.1, after real-course stress testing (see <a href="getting-started.html#tested-at">Getting Started</a> for the numbers) and several rounds of bug fixes against real production data. Both Analytics API models still ship <strong>disabled</strong> by default, and Diagnostics Analytics and Solution Process Visualization are currently reachable by direct URL only, pending a redesign of how they're surfaced in the navigation — see <a href="using.html">Instructor Guide</a> for exactly where to find them today.</p>
+<p>Full, phase-by-phase release history: <a href="../../CHANGELOG.md"><code>CHANGELOG.md</code></a>.</p>
+</article>
 
       <div class="page-nav">
         <a href="index.html"><span class="dir">← Back to</span>Home</a>

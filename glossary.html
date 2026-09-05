@@ -15,22 +15,58 @@
       <h1 class="page-title">Glossary</h1>
 
       <article>
-        <table>
-          <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
-          <tbody>
-            <tr><td><strong>STACK</strong></td><td>System for Teaching and Assessment using a Computer algebra Kernel, a Moodle question type that grades mathematics by evaluating a student's algebraic answer with a CAS (Maxima), rather than matching text.</td></tr>
-            <tr><td><strong>PRT</strong></td><td>Potential Response Tree, the decision logic inside a STACK question that compares a student's answer against various tests and assigns a mark and feedback based on which branch of the tree the answer lands on.</td></tr>
-            <tr><td><strong>Seed</strong></td><td>A random number Moodle assigns to an attempt at a randomised STACK question, determining which specific instantiated values (and therefore which "version") of the question a student receives.</td></tr>
-            <tr><td><strong>Facility Index</strong></td><td>Moodle's own built in measure of how easy a question was in practice, essentially its average score across attempts, on a 0 to 1 scale.</td></tr>
-            <tr><td><strong>Pool A / Pool B</strong></td><td>This plugin's own internal terms for two different sets of response rows: Pool A is every attempt (participation); Pool B is one best attempt per student (performance).</td></tr>
-            <tr><td><strong>Indicator</strong></td><td>In Moodle's Analytics API, a single normalised signal (bounded to [&minus;1, 1]) that feeds into a prediction model, but is not itself the thing being predicted.</td></tr>
-            <tr><td><strong>Target</strong></td><td>In Moodle's Analytics API, the actual outcome a model is trained to predict: in this plugin, either "will this student's grade fall below the pass threshold" (Model 1) or "does this question's pass rate suggest it needs review" (Model 2).</td></tr>
-            <tr><td><strong>Diagnostic report</strong></td><td>A statistical calculation (seed bias, PRT branch coverage) deliberately kept outside the Analytics API's machine learning pipeline, because it has no natural ground truth label to predict against.</td></tr>
-            <tr><td><strong>Tree edit distance (Zhang and Shasha)</strong></td><td>A standard algorithm for measuring how different two tree structures are, by counting the minimum number of node insertions, deletions, and renames needed to turn one into the other.</td></tr>
-            <tr><td><strong>Cohen's d / &eta;<sup>2</sup> bands</strong></td><td>Conventional thresholds (Jacob Cohen, 1988) for calling an effect size negligible, small, medium, or large, used here to interpret the seed bias ANOVA's &eta;<sup>2</sup> without needing an exact p value.</td></tr>
-          </tbody>
-        </table>
-      </article>
+<table>
+<thead>
+<tr class="header">
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>STACK</strong></td>
+<td>System for Teaching and Assessment using a Computer algebra Kernel, a Moodle question type that grades mathematics by evaluating a student's algebraic answer with a CAS (Maxima), rather than matching text.</td>
+</tr>
+<tr class="even">
+<td><strong>PRT</strong></td>
+<td>Potential Response Tree, the decision logic inside a STACK question that compares a student's answer against various tests and assigns a mark and feedback based on which branch of the tree the answer lands on.</td>
+</tr>
+<tr class="odd">
+<td><strong>Seed</strong></td>
+<td>A random number Moodle assigns to an attempt at a randomized STACK question, determining which specific instantiated values (and therefore which "version") of the question a student receives.</td>
+</tr>
+<tr class="even">
+<td><strong>Facility Index</strong></td>
+<td>Moodle's own built-in measure of how easy a question was in practice, essentially its average score across attempts, on a 0 to 1 scale.</td>
+</tr>
+<tr class="odd">
+<td><strong>Pool A / Pool B</strong></td>
+<td>This plugin's own internal terms for two different sets of response rows: Pool A is every attempt (participation); Pool B is one best attempt per student (performance). See <a href="calculations.html#two-response-pools">How Everything Is Calculated § Two response pools</a>.</td>
+</tr>
+<tr class="even">
+<td><strong>Indicator</strong></td>
+<td>In Moodle's Analytics API, a single normalized signal (bounded to <code>[-1, 1]</code>) that feeds into a prediction model, but is not itself the thing being predicted.</td>
+</tr>
+<tr class="odd">
+<td><strong>Target</strong></td>
+<td>In Moodle's Analytics API, the actual outcome a model is trained to predict: in this plugin, either "will this student's grade fall below the pass threshold" (Model 1) or "does this question's pass rate suggest it needs review" (Model 2).</td>
+</tr>
+<tr class="even">
+<td><strong>Diagnostic report</strong></td>
+<td>A statistical calculation (seed bias, PRT branch coverage) deliberately kept outside the Analytics API's machine-learning pipeline, because it has no natural ground-truth label to predict against.</td>
+</tr>
+<tr class="odd">
+<td><strong>Tree edit distance (Zhang and Shasha)</strong></td>
+<td>A standard algorithm for measuring how different two tree structures are, by counting the minimum number of node insertions, deletions, and renames needed to turn one into the other.</td>
+</tr>
+<tr class="even">
+<td><strong>Cohen's <em>d</em> / η² bands</strong></td>
+<td>Conventional thresholds (Jacob Cohen, 1988) for calling an effect size negligible, small, medium, or large, used here to interpret the seed-bias ANOVA's η² without needing an exact <em>p</em>-value.</td>
+</tr>
+</tbody>
+</table>
+<p>Full context for every term above: <a href="calculations.html">How Everything Is Calculated</a>.</p>
+</article>
 
       <div class="page-nav">
         <a href="architecture.html"><span class="dir">← Previous</span>7. Architecture &amp; Design</a>

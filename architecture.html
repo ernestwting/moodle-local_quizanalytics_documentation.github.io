@@ -15,41 +15,42 @@
       <h1 class="page-title">Architecture &amp; Design</h1>
 
       <article>
-        <h2 id="overview">7.1 System overview</h2>
-        <p>Data flows in one direction, from Moodle's own database out to whatever renders the final view:</p>
-        <pre class="mono" style="display:block;background:var(--code-bg);padding:14px 16px;border-radius:6px;overflow-x:auto;white-space:pre-wrap;">Moodle (PHP)
-  ↓ reads quiz_attempts / grades / log events via the question engine, gradelib, logstore_standard_log
-Moodle DB
-  ↓ classes/quiz/analytics/*.php (Quiz + Question Analytics)
-  ↓ classes/stack/analytics/*.php (Model + Diagnostics Analytics)
-Plotly.js / KaTeX (client side)  or  TCPDF (server side PDF)</pre>
-        <ul>
-          <li><strong>No CSV round trip, no external service.</strong> <code>classes/quiz/data_fetcher.php</code> reads finished attempts straight out of <code>quiz_attempts</code> through Moodle's own question engine; <code>classes/stack/local/stack_attempt_reader.php</code> does the same for Model Analytics and Diagnostics Analytics.</li>
-          <li><strong>STACK question text is rendered through STACK's own CAS engine</strong> (<code>castext2_qa_processor</code>), never read as raw stored <code>questiontext</code>.</li>
-          <li><strong>Every computation is pure PHP</strong>: no Python, no external service, no Composer dependency required at runtime.</li>
-          <li><strong>Caching applies only to Quiz Analytics and Question Analytics.</strong> Every fetch/compute path is backed by a Moodle MUC cache area, keyed on a cheap SQL fingerprint (attempt count, latest completion time, and summed grades) rather than a fixed time to live.</li>
-          <li><strong>Analytics API integration</strong> (Model Analytics only): <code>db/analytics.php</code> registers both prediction models via Moodle core's own analytics manager class, using its <code>update_default_models_for_component()</code> method.</li>
-        </ul>
-
-        <h2 id="why-shaped">7.2 Why the models are shaped the way they are</h2>
-        <p>Moodle's Analytics API imposes four hard constraints that shaped this plugin's design more than anything else did:</p>
-        <ul>
-          <li>Core machine learning backends support <strong>binary classification only</strong>: a target like "predict a student's final grade" has to become a yes/no question rather than a continuous prediction, unless a custom backend is written.</li>
-          <li>Every indicator must return a float in [&minus;1, 1]: every raw signal this plugin computes has to be normalised and bounded before it can legally become an indicator.</li>
-          <li>Moodle's Analytics API currently supports <strong>supervised learning only</strong>: detections with no natural ground truth label, like seed bias or PRT branch coverage, cannot become a supervised target at all; they need either a proxy label, a static rule based model, or reframing as descriptive statistics outside the ML pipeline.</li>
-          <li>A model is exactly one target, plus any number of indicators, plus one analyser and one backend; there is no way to smuggle two separate objectives into a single target.</li>
-        </ul>
-        <p>Working through those constraints against the original list of roughly eleven behaviours this plugin set out to detect produced a triage: each behaviour became either <em>the thing being predicted</em> (a target), <em>evidence feeding a prediction</em> (an indicator), or <em>a statistical report kept outside the machine learning pipeline entirely</em> (a diagnostic). Seed bias and PRT branch coverage both landed in that third category: neither has a natural label to predict, and both are perfectly well served by a direct statistical test rather than a trained model dressed up to look like one. That architectural honesty is a deliberate choice, not an oversight.</p>
-
-        <h2 id="came-from">7.3 Where the plugin came from</h2>
-        <p>Originally developed as a hackathon project in 2024 by Juma Zevick Otieno, this was a simple Streamlit application providing Quiz Analytics. That application can be viewed here. After that, Ernest Ting further developed the application, converting the Streamlit to PHP so it could be used in Moodle. As a result of this conversion, STACK q-type Analytics is the merger of two previously separate plugins that used to be installed independently: the original <code>local_quizanalytics</code>, which handled coursewide comparison and per quiz question analytics, and <code>local_stackanalytics</code>, which contributed the two Analytics API prediction models and the diagnostics dashboard that uses no machine learning at all. They now live under one component name, one capability, and one navigation entry. Chapter 7 has the full account of why the two prediction models are built the way they are, including a research style discussion of why some of the eleven behaviours this plugin originally set out to detect became <em>predictions</em>, some became <em>evidence feeding a prediction</em>, and some became plain statistical reports kept deliberately outside the machine learning pipeline. Each section's computation logic carried over from its own original plugin essentially unchanged: only namespaces, the capability, and the navigation entry points changed to make the merge coherent, since both halves had already been independently built and verified before the merge took place.</p>
-
-        <h2 id="gaps">7.4 Known, tracked gaps</h2>
-        <ul>
-          <li>Two Model Analytics indicators are documented simplifications of a more rigorous original design: question difficulty's classical test theory proxy instead of a jointly fit two parameter IRT model, and feedback ineffectiveness's aggregate log odds effect size instead of a paired statistical test done per branch, both because the fuller version needs a batch calibration step the Analytics API's per sample indicator model has no hook for.</li>
-          <li>Concept dependency mapping is an intentional placeholder, not an implemented feature. It is better suited to offline sequence mining work than a live dashboard page.</li>
-        </ul>
-      </article>
+<pre><code>Moodle (PHP)
+     |
+     | reads quiz_attempts/grades/log events via the question engine,
+     | gradelib, and logstore_standard_log directly
+     v
+  Moodle DB
+     |
+     +--&gt; classes/quiz/analytics/*.php    (Quiz Analytics + Question
+     |     Analytics: STACK/Maxima response parsing, statistics, chart
+     |     JSON, PDF layout)
+     |
+     +--&gt; classes/stack/analytics/*.php   (Model Analytics + Diagnostics
+           Analytics: indicators, targets, report builders, PDF layout)
+     |
+     v
+Plotly.js / KaTeX (client-side rendering) or TCPDF (server-side PDF)</code></pre>
+<ul>
+<li><strong>No CSV round-trip, no external service.</strong> <code>classes/quiz/data_fetcher.php</code> reads finished attempts straight out of <code>quiz_attempts</code> via Moodle's question engine; <code>classes/stack/local/stack_attempt_reader.php</code> does the same for Model Analytics/Diagnostics Analytics.</li>
+<li><strong>STACK question text is rendered through STACK's own CAS engine</strong> (<code>castext2_qa_processor</code>), never read as raw stored <code>questiontext</code>.</li>
+<li><strong>Every computation is pure PHP</strong> — no Python, no external service, no Composer dependencies at runtime.</li>
+<li><strong>Caching</strong> (Quiz Analytics/Question Analytics only): every fetch/compute path is backed by a Moodle MUC cache area, keyed on a cheap SQL fingerprint (attempt count + latest <code>timefinish</code> + summed grades) rather than a fixed TTL — an entry is only ever served while that fingerprint still matches. Model Analytics/Diagnostics Analytics have <strong>no result cache</strong>; every dashboard view recomputes from scratch.</li>
+<li><strong>Analytics API integration</strong> (Model Analytics): <code>db/analytics.php</code> registers both prediction models via <code>\core_analytics\manager::update_default_models_for_component()</code>, consumed automatically by core on install/upgrade.</li>
+</ul>
+<p>See <a href="calculations.html">How Everything Is Calculated</a> for the actual math behind every number this produces, and <a href="privacy-security.html">Privacy &amp; Security</a> for what data this touches and where it stays.</p>
+<h2 id="two-deeper-reference-documents-live-alongside-this-guide">Two deeper reference documents live alongside this guide</h2>
+<ul>
+<li><strong><a href="../moodle-stack-analytics-architecture.md"><code>moodle-stack-analytics-architecture.md</code></a></strong> — the original research/design outline for Model Analytics: for each of the ~11 behaviors it detects, why it's a <em>target</em> (the thing being predicted), an <em>indicator</em> (evidence feeding a prediction), or a <em>diagnostic report</em> outside the ML pipeline entirely, plus the Moodle Analytics API's own hard constraints (binary-only core backends, indicators bounded to <code>[-1,1]</code>, supervised-only, one Target per Model) that shaped those choices. §3.3 in particular covers the proxy-label circularity caveat referenced throughout <a href="calculations.html#model-analytics">How Everything Is Calculated</a>.</li>
+<li><strong><a href="../plugin-naming-and-merge-history.md"><code>plugin-naming-and-merge-history.md</code></a></strong> — this plugin is the merger of two previously separate, independently installed plugins (<code>local_quizanalytics</code> and <code>local_stackanalytics</code>), and the merged codebase itself was renamed twice before settling on its current name. This document is the condensed, narrative account of that history — useful context for why some class namespaces still say <code>stack</code>/<code>quiz</code> independently, or why an old commit message references a component name that no longer exists. The full blow-by-blow lives in <a href="../../CHANGELOG.md"><code>CHANGELOG.md</code></a>.</li>
+</ul>
+<h2 id="known-tracked-gaps">Known, tracked gaps</h2>
+<p>Documented rather than hidden — see <a href="../../README.md#status"><code>README.md</code></a> for the current list, currently:</p>
+<ul>
+<li>Two Model Analytics indicators are documented simplifications of the architecture doc's literal spec — <code>question_difficulty_irt</code>'s classical- test-theory proxy instead of a jointly-fitted 2PL IRT model, and <code>feedback_ineffectiveness</code>'s aggregate log-odds effect size instead of a per-branch paired McNemar's test — both because the fuller version needs a batch step the Analytics API's per-sample indicator model doesn't provide. Detail: <a href="calculations.html">How Everything Is Calculated</a>.</li>
+<li><code>concept_dependency_report</code> (concept-dependency mapping across questions) is an intentional placeholder, not implemented — the architecture doc frames it as offline sequence-mining work better suited outside a live dashboard page.</li>
+</ul>
+</article>
 
       <div class="page-nav">
         <a href="privacy-security.html"><span class="dir">← Previous</span>6. Privacy &amp; Security</a>
