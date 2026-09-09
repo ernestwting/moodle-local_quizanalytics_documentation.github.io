@@ -9,7 +9,8 @@
     { href: "privacy-security.html", label: "Privacy & Security", num: "6" },
     { href: "architecture.html", label: "Architecture & Design", num: "7" },
     { href: "glossary.html", label: "Glossary", num: "8" },
-    { href: "references.html", label: "References", num: "9" }
+    { href: "references.html", label: "References", num: "9" },
+    { href: "research-plan.html", label: "Pilot Research Plan", num: "10" }
   ];
 
   var here = location.pathname.split("/").pop() || "index.html";
