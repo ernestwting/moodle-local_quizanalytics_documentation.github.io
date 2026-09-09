@@ -60,12 +60,12 @@
 <tr class="even">
 <td>Cache-warming parallel workers</td>
 <td>auto-detected</td>
-<td>How many worker processes the scheduled task forks to fetch several quizzes concurrently (CLI/cron only).</td>
+<td><strong>Currently has no effect (as of 3.0.2)</strong> — forking was found able to crash the entire Moodle cron process on a large enough course (see <code>CHANGELOG.md</code>'s <code>[3.0.2]</code> entry for the full story); cache-warming always fetches one quiz at a time now regardless of this setting. Left in place for a possible future fix, not removed.</td>
 </tr>
 <tr class="odd">
 <td>Cache-warming worker memory limit</td>
 <td>2048 MB</td>
-<td>PHP memory limit per worker. Size <code>workers × this</code> comfortably under real available RAM.</td>
+<td>PHP memory limit for the cache-warming fetch.</td>
 </tr>
 <tr class="even">
 <td>On-demand background-compute time budget</td>
