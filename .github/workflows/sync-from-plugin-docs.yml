@@ -1,7 +1,7 @@
 name: Sync docs from local_quizanalytics
 
 # Keeps this site's chapter pages in sync with moodle-local_quizanalytics's
-# docs/guide/*.md, its own working source of documentation. Runs on a
+# docs/*.md, its own working source of documentation. Runs on a
 # schedule (that repo is a separate GitHub repo -- it has no way to push a
 # webhook into this one) and can be triggered by hand from the Actions tab.
 # Needs no secrets: the source repo is public (read via raw.githubusercontent.com,
@@ -34,7 +34,7 @@ jobs:
             git config user.name "docs-sync-bot"
             git config user.email "actions@users.noreply.github.com"
             git add -A
-            git commit -m "Sync content from moodle-local_quizanalytics docs/guide/"
+            git commit -m "Sync content from moodle-local_quizanalytics docs/"
             git push
           else
             echo "No changes to commit."

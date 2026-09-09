@@ -99,34 +99,34 @@ h = n^{-1/(d+4)}\,\sigma \qquad (d = 1 \text{ for a single time dimension})
 <p><strong>The five indicators</strong>, each producing a number in <strong>[-1, 1]</strong> (the Analytics API's own required indicator range) and a plain-language sentence:</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Indicator</th>
 <th>What it measures</th>
 <th>How</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><strong>Grade trajectory</strong></td>
 <td>This student's STACK scores vs. full marks</td>
 <td>Mean grade across finished attempts, linearly rescaled from <code>[0, max]</code> to <code>[-1, 1]</code>.</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>Response-latency anomaly</strong></td>
 <td>Implausibly <em>fast</em> answering vs. the class</td>
 <td>A z-score of this student's mean inter-step gap against the whole course's own gap distribution, scaled by ÷3 and negated (faster than the cohort → positive/"watch" indicator). Only ever flags <em>too fast</em> — a slower-than-average student is never flagged by this measure.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>Disengagement entropy</strong></td>
 <td>Mechanical-looking submission timing + question abandonment</td>
 <td>Half weight on <code>(1 − normalized entropy)</code> of inter-step time gaps (regular, robotic timing → low entropy), half weight on the fraction of attempts abandoned (last step state = "gave up").</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>Help-seeking gap</strong></td>
 <td>Whether this student seeks help after a wrong answer as often as classmates</td>
 <td>For each STACK failure, checks whether a forum/glossary/resource/page/URL/book access happened within a lookback window (default 1 hour, admin-configurable). Student's own rate compared to the course-wide baseline rate.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>Feedback revision distance</strong></td>
 <td>Whether an answer meaningfully changes after feedback</td>
 <td>Normalized Levenshtein edit distance between consecutive tries at the same input, averaged and rescaled — heavily revised (good) vs. barely changed (watch-worthy).</td>
@@ -148,29 +148,29 @@ H = -\sum_i p_i \log_2 p_i
 <p><strong>The four indicators:</strong></p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Indicator</th>
 <th>What it measures</th>
 <th>How</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><strong>Question difficulty</strong></td>
 <td>How hard the question is empirically</td>
 <td>Pass rate converted to a logit (log-odds), clipped to ±3 logit units, scaled to [-1,1]. This is a <strong>classical-test-theory proxy</strong>, not a jointly-fitted 2-parameter IRT model — see <a href="#documented-simplifications">caveat below</a>.</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>Syntax-error rate</strong></td>
 <td>Whether wrong answers are input mistakes rather than maths mistakes</td>
 <td>Of all failed attempts, the share whose final state was Moodle's <code>invalid</code> engine state (input/format rejected before it was even graded).</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><strong>Unreached PRT branches</strong></td>
 <td>How much of the question's marking logic has never fired</td>
 <td>For every PRT branch (a node's true/false answer-note), checks whether that answer-note text appears as a substring in any attempt's response summary. Ratio of never-matched branches. Branches with a blank answer-note can't be observed this way and are excluded — a known data-model limitation.</td>
 </tr>
-<tr class="even">
+<tr>
 <td><strong>Feedback ineffectiveness</strong></td>
 <td>Whether students improve after a wrong try, more than a fresh baseline</td>
 <td>Log-odds of (improve rate on a next quiz attempt after a wrong one) vs. (first-attempt pass rate baseline), clipped to ±3, scaled to [-1,1]. See <a href="#documented-simplifications">caveat below</a> — this is measured across a student's <em>repeated quiz attempts</em>, not within-attempt retries.</td>
@@ -191,7 +191,6 @@ P(\text{correct} \mid \theta) = c + \frac{1-c}{1+e^{-a(\theta-b)}}
 <p>That joint fit needs a batch calibration pass across the whole item bank, which nothing in the Analytics API's <code>calculate_sample()</code> contract provides a hook for.</p></li>
 <li><p><strong>Feedback ineffectiveness</strong> was originally designed to compare consecutive <em>tries within one question attempt</em> (matching STACK's "interactive with multiple tries" behavior) via a per-PRT-branch paired statistical test. Under <strong>deferred feedback</strong> — the behavior this plugin's own test courses actually use, where only the last step of an attempt is ever graded — that produced zero signal, since there's no earlier graded try to compare against. It was redefined to compare a student's own repeated <strong>quiz attempts</strong> instead, and the per-branch attribution was dropped for an aggregate log-odds effect size, since Moodle only stores an attempt's <em>current</em> response summary, not a per-step history a per-branch test would need.</p></li>
 </ul>
-<p>Full design rationale for every target/indicator/diagnostic split — why each is one or the other — lives in <a href="../moodle-stack-analytics-architecture.md"><code>moodle-stack-analytics-architecture.md</code></a>.</p>
 <h2 id="diagnostics-analytics">Diagnostics Analytics</h2>
 <p>Statistical reports, not model predictions — no ground-truth label is involved, so there's nothing to train or predict. Currently not in the on-screen section switcher, reachable directly at <code>diagnosticsanalytics.php?id=&lt;courseid&gt;</code> (see <a href="using.html#diagnostics-analytics">Instructor Guide</a>).</p>
 <h3 id="seed-bias">Seed bias</h3>
@@ -216,7 +215,7 @@ P(\text{correct} \mid \theta) = c + \frac{1-c}{1+e^{-a(\theta-b)}}
 <h2 id="hidden--not-shown-on-screen-today">Hidden / not shown on screen today</h2>
 <p>A few real, working calculations exist in the codebase but aren't currently wired into any on-screen page — kept here rather than left undiscoverable:</p>
 <ul>
-<li><strong>Difficulty &amp; discrimination indices, response outcome/valid-invalid breakdowns, and the student×question performance-matrix heatmap</strong> (<code>classes/quiz/analytics/difficulty.php</code>, <code>question_charts.php</code>, <code>response_analysis::compute_response_outcomes()</code>) are fully implemented and correct, but the current simplified Question Analytics page (since the 3.0.0 redesign — see <a href="../../CHANGELOG.md"><code>CHANGELOG.md</code></a>) shows only the Question Response Overview and Question Review sections. These functions have no on-screen caller today; they remain available for a future redesign or for direct use.</li>
+<li><strong>Difficulty &amp; discrimination indices, response outcome/valid-invalid breakdowns, and the student×question performance-matrix heatmap</strong> (<code>classes/quiz/analytics/difficulty.php</code>, <code>question_charts.php</code>, <code>response_analysis::compute_response_outcomes()</code>) are fully implemented and correct, but the current simplified Question Analytics page (since the 3.0.0 redesign — see <a href="../CHANGELOG.md"><code>CHANGELOG.md</code></a>) shows only the Question Response Overview and Question Review sections. These functions have no on-screen caller today; they remain available for a future redesign or for direct use.</li>
 <li><strong>The scatter plot's jitter.</strong> The "Attempts vs. Grades" scatter chart nudges each point's <em>displayed position only</em> by a small deterministic offset (±0.15, seeded from an MD5 hash of the student and quiz, so the same student always gets the same nudge on every reload — not re-randomized per view). This exists purely so students who land on the exact same (attempt count, grade) coordinate don't render as one indistinguishable overlapping dot — marker size also scales up with how many students actually share a point. <strong>The real, unjittered values are what every statistic (including the displayed Pearson correlation) is computed from</strong> — jitter never touches a number, only a pixel position.</li>
 <li><strong><code>validation.php</code>'s grade audit.</strong> Every Question Analytics computation cross-checks its own calculated grade against Moodle's authoritative recorded grade for each attempt, flagging any mismatch ≥ 0.01 — and specifically distinguishes a STACK "validated but not regraded" quirk from a generic manual-override explanation. This runs but isn't surfaced as a user-facing report; it exists as a built-in correctness check.</li>
 </ul>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pulls docs/guide/*.md from the public moodle-local_quizanalytics repo,
+"""Pulls docs/*.md from the public moodle-local_quizanalytics repo,
 converts each to HTML via pandoc, and replaces the <article>...</article>
 region of the matching chapter page in this repo.
 
@@ -14,12 +14,12 @@ import urllib.request
 
 SOURCE_RAW = (
     "https://raw.githubusercontent.com/ernestwting/moodle-local_quizanalytics"
-    "/main/docs/guide/{}.md"
+    "/main/docs/{}.md"
 )
 
-# docs/guide/<key>.md in moodle-local_quizanalytics -> this site's chapter page.
+# docs/<key>.md in moodle-local_quizanalytics -> this site's chapter page.
 # index.md is intentionally not synced -- this site's index.html is a
-# hand-built cover/TOC page with no equivalent structure in docs/guide/.
+# hand-built cover/TOC page with no equivalent structure in docs/.
 MAPPING = {
     "about": "introduction.html",
     "getting-started": "getting-started.html",
@@ -41,7 +41,7 @@ def fetch(name: str) -> str:
 
 
 def strip_leading_frontmatter(md: str) -> str:
-    # Drop docs/guide/*.md's own breadcrumb line ("\[ [STACK q-type
+    # Drop docs/*.md's own breadcrumb line ("\[ [STACK q-type
     # Analytics Docs](index.md) -> About \]") and its top-level "# Title"
     # heading -- the site page already renders its own crumb and
     # <h1 class="page-title">, so both would otherwise duplicate here.
@@ -55,7 +55,7 @@ def strip_leading_frontmatter(md: str) -> str:
 
 def rewrite_md_link(match: re.Match) -> str:
     stem, fragment = match.group(1), match.group(2) or ""
-    # docs/guide/foo.md -> this site's target file for foo, per MAPPING
+    # docs/foo.md -> this site's target file for foo, per MAPPING
     # (several don't share a filename with their source, e.g. about.md ->
     # introduction.html) -- fall back to a plain .md->.html swap for
     # anything not in MAPPING, though every real cross-link should be.

@@ -17,13 +17,13 @@ Claude acting in a session.
 
 # Documentation update policy
 
-**`docs/guide/*.md` in [`moodle-local_quizanalytics`](https://github.com/ernestwting/moodle-local_quizanalytics)
+**`docs/*.md` in [`moodle-local_quizanalytics`](https://github.com/ernestwting/moodle-local_quizanalytics)
 is the source of truth.** `.github/workflows/sync-from-plugin-docs.yml`
 pulls it on a schedule (and via manual dispatch), converts it with pandoc,
 and replaces the `<article>...</article>` body of the matching chapter
 page here — see `scripts/sync_docs.py` for the exact file mapping. Do not
 hand-edit a chapter page's `<article>` content directly; it will be
-overwritten by the next sync run. Edit `docs/guide/` in the plugin repo
+overwritten by the next sync run. Edit `docs/` in the plugin repo
 instead, following that repo's own documentation-update policy (its
 `CLAUDE.md`) for what counts as a big-enough change to update docs for.
 
