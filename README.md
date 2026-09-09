@@ -24,7 +24,7 @@ Source: Deploy from a branch → `main` / `(root)`**.
 
 ## Keeping this in sync with the plugin
 
-This site's nine chapter pages are **automatically synced** from
+This site's ten chapter pages are **automatically synced** from
 [`moodle-local_quizanalytics`](https://github.com/ernestwting/moodle-local_quizanalytics)'s
 own [`docs/guide/*.md`](https://github.com/ernestwting/moodle-local_quizanalytics/tree/main/docs/guide) —
 that Markdown is the real source of truth. A scheduled GitHub Action
