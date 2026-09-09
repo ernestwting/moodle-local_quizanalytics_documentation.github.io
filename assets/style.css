@@ -77,7 +77,8 @@ a:hover { color: var(--link-hover); text-decoration: underline; }
 }
 .sb-nav .sb-chnum {
   display: inline-block;
-  width: 1.4em;
+  min-width: 1.4em;
+  margin-right: 0.3em;
   color: #9aa4b2;
   font-variant-numeric: tabular-nums;
 }
