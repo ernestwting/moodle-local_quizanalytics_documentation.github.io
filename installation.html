@@ -52,34 +52,34 @@
 <p><strong>Site administration → Plugins → Local plugins → STACK q-type Analytics.</strong> Most of these auto-configure themselves against your actual server on first install/upgrade — review, don't feel you need to hand-tune them on a normal install:</p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Setting</th>
 <th>Default</th>
 <th>What it does</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>Detected server resources</td>
 <td>(readout)</td>
 <td>Detected CPU cores/RAM and the cache-warming worker count calculated from them. "Re-detect and apply now" if the server's hardware changes later.</td>
 </tr>
-<tr>
+<tr class="even">
 <td>Cache-warming parallel workers</td>
 <td>auto-detected</td>
 <td><strong>Currently has no effect (as of 3.0.2)</strong> — forking was found able to crash the entire Moodle cron process on a large enough course (see <code>CHANGELOG.md</code>'s <code>[3.0.2]</code> entry for the full story); cache-warming always fetches one quiz at a time now regardless of this setting. Left in place for a possible future fix, not removed.</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>Cache-warming worker memory limit</td>
 <td>2048 MB</td>
 <td>PHP memory limit for the cache-warming fetch.</td>
 </tr>
-<tr>
+<tr class="even">
 <td>On-demand background-compute time budget</td>
 <td>20s</td>
 <td>If a cold-cache request is estimated to exceed this, it's handed to a background task instead of blocking. Set to <code>0</code> to always compute inline.</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>Computation time limit</td>
 <td>120s</td>
 <td>Raises PHP's own execution-time limit for the course-wide view and PDF export only — doesn't help a reverse-proxy timeout in front of your site.</td>
@@ -114,41 +114,41 @@
 <h2 id="troubleshooting-quick-reference">Troubleshooting quick-reference</h2>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Symptom</th>
 <th>Likely cause</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>"Analytics" doesn't appear anywhere</td>
 <td>Plugin not installed, or no STACK quiz/finished attempts</td>
 </tr>
-<tr>
+<tr class="even">
 <td>"No attempts yet"</td>
 <td>No <code>state = finished</code> attempts for the quiz</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>A large course's view or PDF export times out</td>
 <td>Raise <strong>Computation time limit</strong> (step 3)</td>
 </tr>
-<tr>
+<tr class="even">
 <td>Page 524s / times out on a large course</td>
 <td>A reverse proxy/CDN in front of the site is giving up first, not PHP — confirm cron is actually running so the cache stays warm ahead of real visitors</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>"Generating in the background" never resolves</td>
 <td>Cron isn't running, or the background task crashed/is stuck retrying — check the settings page's cron-status banner, then Task logs. Also check Task logs for a <em>different</em>, unrelated task failing repeatedly (seen live: a <code>qtype_stack</code> bug crashing <code>quiz_statistics\task\recalculate</code> on a large quiz) — a repeatedly-failing task elsewhere can hog every cron run and starve this plugin's own background task even though nothing here is actually broken</td>
 </tr>
-<tr>
+<tr class="even">
 <td>Charts blank / JS console errors</td>
 <td>Check for a 404 on <code>js/vendor/plotly.min.js</code> or <code>js/vendor/katex/*</code> — the plugin folder wasn't copied completely</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>Math renders as literal <code>\(...\)</code> text</td>
 <td><code>js/vendor/katex/fonts/</code> didn't come along — re-copy the whole <code>js/vendor/katex/</code> folder</td>
 </tr>
-<tr>
+<tr class="even">
 <td>A model's Actions menu is missing Evaluate/Get predictions</td>
 <td><code>onlycli</code> analytics setting is on — see step 4</td>
 </tr>

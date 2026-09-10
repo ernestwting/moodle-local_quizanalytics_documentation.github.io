@@ -99,34 +99,34 @@ h = n^{-1/(d+4)}\,\sigma \qquad (d = 1 \text{ for a single time dimension})
 <p><strong>The five indicators</strong>, each producing a number in <strong>[-1, 1]</strong> (the Analytics API's own required indicator range) and a plain-language sentence:</p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Indicator</th>
 <th>What it measures</th>
 <th>How</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td><strong>Grade trajectory</strong></td>
 <td>This student's STACK scores vs. full marks</td>
 <td>Mean grade across finished attempts, linearly rescaled from <code>[0, max]</code> to <code>[-1, 1]</code>.</td>
 </tr>
-<tr>
+<tr class="even">
 <td><strong>Response-latency anomaly</strong></td>
 <td>Implausibly <em>fast</em> answering vs. the class</td>
 <td>A z-score of this student's mean inter-step gap against the whole course's own gap distribution, scaled by ÷3 and negated (faster than the cohort → positive/"watch" indicator). Only ever flags <em>too fast</em> — a slower-than-average student is never flagged by this measure.</td>
 </tr>
-<tr>
+<tr class="odd">
 <td><strong>Disengagement entropy</strong></td>
 <td>Mechanical-looking submission timing + question abandonment</td>
 <td>Half weight on <code>(1 − normalized entropy)</code> of inter-step time gaps (regular, robotic timing → low entropy), half weight on the fraction of attempts abandoned (last step state = "gave up").</td>
 </tr>
-<tr>
+<tr class="even">
 <td><strong>Help-seeking gap</strong></td>
 <td>Whether this student seeks help after a wrong answer as often as classmates</td>
 <td>For each STACK failure, checks whether a forum/glossary/resource/page/URL/book access happened within a lookback window (default 1 hour, admin-configurable). Student's own rate compared to the course-wide baseline rate.</td>
 </tr>
-<tr>
+<tr class="odd">
 <td><strong>Feedback revision distance</strong></td>
 <td>Whether an answer meaningfully changes after feedback</td>
 <td>Normalized Levenshtein edit distance between consecutive tries at the same input, averaged and rescaled — heavily revised (good) vs. barely changed (watch-worthy).</td>
@@ -148,29 +148,29 @@ H = -\sum_i p_i \log_2 p_i
 <p><strong>The four indicators:</strong></p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Indicator</th>
 <th>What it measures</th>
 <th>How</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td><strong>Question difficulty</strong></td>
 <td>How hard the question is empirically</td>
 <td>Pass rate converted to a logit (log-odds), clipped to ±3 logit units, scaled to [-1,1]. This is a <strong>classical-test-theory proxy</strong>, not a jointly-fitted 2-parameter IRT model — see <a href="#documented-simplifications">caveat below</a>.</td>
 </tr>
-<tr>
+<tr class="even">
 <td><strong>Syntax-error rate</strong></td>
 <td>Whether wrong answers are input mistakes rather than maths mistakes</td>
 <td>Of all failed attempts, the share whose final state was Moodle's <code>invalid</code> engine state (input/format rejected before it was even graded).</td>
 </tr>
-<tr>
+<tr class="odd">
 <td><strong>Unreached PRT branches</strong></td>
 <td>How much of the question's marking logic has never fired</td>
 <td>For every PRT branch (a node's true/false answer-note), checks whether that answer-note text appears as a substring in any attempt's response summary. Ratio of never-matched branches. Branches with a blank answer-note can't be observed this way and are excluded — a known data-model limitation.</td>
 </tr>
-<tr>
+<tr class="even">
 <td><strong>Feedback ineffectiveness</strong></td>
 <td>Whether students improve after a wrong try, more than a fresh baseline</td>
 <td>Log-odds of (improve rate on a next quiz attempt after a wrong one) vs. (first-attempt pass rate baseline), clipped to ±3, scaled to [-1,1]. See <a href="#documented-simplifications">caveat below</a> — this is measured across a student's <em>repeated quiz attempts</em>, not within-attempt retries.</td>
