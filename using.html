@@ -25,13 +25,14 @@
 <p>How to use each of the four sections day to day, once the plugin is installed (see <a href="installation.html">Installation</a> if it isn't yet). This plugin is visible to <strong>teachers, editing teachers, and managers only</strong> — not students — on any course that has at least one STACK question added directly to a quiz slot.</p>
 <h2 id="getting-to-it">Getting to it</h2>
 <ul>
-<li><strong>From a course:</strong> open the course, look for an <strong>Analytics</strong> entry in the secondary navigation bar (<code>Course | Settings | Participants | Grades | Reports | ...</code> — check inside <strong>More</strong> if the bar is full). This lands you on Quiz Analytics.</li>
+<li><strong>From a course:</strong> open the course, look for an <strong>Analytics</strong> entry in the secondary navigation bar (<code>Course | Settings | Participants | Grades | Reports | ...</code> — check inside <strong>More</strong> if the bar is full). This lands you on Quiz Analytics. This entry now appears on every course regardless of whether it has any STACK content — checking that on every course page load was itself a measurable cost at scale, so the check was moved to Quiz Analytics's own page instead (see below).</li>
 <li><strong>From a quiz:</strong> open any STACK quiz directly and look in its own settings/administration menu for an <strong>Analytics</strong> entry — this jumps straight to that quiz's Question Analytics.</li>
 <li><strong>Switching sections:</strong> every page has a <strong>Section:</strong> switcher at the top — Quiz Analytics, Question Analytics, Model Analytics. (Diagnostics Analytics isn't in this switcher yet — see <a href="#diagnostics-analytics">§ Diagnostics Analytics</a> below.)</li>
 </ul>
-<p>If nothing appears at all, the most common reasons are: no STACK question added directly to a slot in that course, or no finished attempts yet.</p>
+<p>If nothing appears once you're actually on a section's own page, the most common reasons are: no STACK question added directly to a slot in that course, or no finished attempts yet.</p>
 <h2 id="quiz-analytics">Quiz Analytics</h2>
-<p>The course-wide view — every STACK quiz in the course, compared side by side. Shows an attempts-vs-grades scatter plot and aggregated difficulty/response distributions. Use the <strong>Compare attempts against:</strong> selector to switch which grade (average, highest, or minimum) the scatter plot compares attempt counts to.</p>
+<p>The course-wide view — every STACK quiz in the course, compared side by side by default. Shows an attempts-vs-grades scatter plot and aggregated difficulty/response distributions. Use the <strong>Compare attempts against:</strong> selector to switch which grade (average, highest, or minimum) the scatter plot compares attempt counts to.</p>
+<p>Use the <strong>Quizzes to Include in Analytics</strong> panel (checkboxes grouped by course section, with Select All/Clear) to scope the report to a chosen subset of the course's STACK quizzes instead of always combining every one, then press <strong>View Analytics</strong>. A cold report — the first time this exact course/quiz selection has been viewed, or after new attempts change its data — shows a progress bar while it computes; small/fast reports finish on the same page load, larger ones finish in the background and the page updates itself once ready.</p>
 <p>Two display toggles apply across this and Question Analytics:</p>
 <ul>
 <li><strong>Colorblind mode</strong> — swaps chart color palettes for a colorblind-safe set.</li>
