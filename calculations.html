@@ -42,10 +42,11 @@
 <li><strong><code>correct</code></strong> — score (see below) equals exactly <code>1.0</code>.</li>
 <li><strong><code>incorrect</code></strong> — anything else.</li>
 </ol>
-<p><strong>Score for a question with <code>M</code> parts</strong> = the mean of each part's PRT fraction, treating a missing/null PRT part as <code>0</code> credit — not excluded from the average:</p>
+<p><strong>Score for a question</strong> comes from Moodle's own authoritative per-question mark — <code>question_usage_by_activity::get_question_mark()</code> / <code>get_question_max_mark()</code>, read straight off the live question engine, the same number the Grades page and <code>mod/quiz/review.php</code> show:</p>
 <p><span class="math display">\[
-\text{score} = \frac{1}{M}\sum_{i=1}^{M}\text{fraction}_i
+\text{score} = \frac{\text{mark}}{\text{max mark}}
 \]</span></p>
+<p>The PRT-fraction text above is still parsed (and used as a fallback score source when a mark genuinely isn't available), but is no longer the primary source: its exact shape turned out to be STACK-version-dependent — confirmed directly against a real course, some of whose older attempts predate a STACK release that started including the <code># = &lt;fraction&gt;</code> prefix at all, so the fallback's own read of those PRT fields would silently land on <code>0</code> regardless of the real awarded mark. When the fallback path <em>is</em> used, a question's <code>M</code> (its number of PRT parts) is taken as the <strong>mode</strong> — the most common per-response PRT count — rather than the max seen across every response for that question, so one response whose text happens to produce a spurious extra match can no longer inflate <code>M</code> and dilute every other student's score.</p>
 <p><strong>Only <code>correct</code>/<code>incorrect</code> responses count as "graded"</strong> for facility, percent-correct, and average-score calculations everywhere in this plugin. This exclusion exists specifically because an earlier version counted <code>blank</code>/<code>ungraded</code> responses (e.g. a question nobody reached yet) as automatic failures, which measurably dragged down course-wide averages on real courses that had questions with zero attempts.</p>
 <h3 id="two-response-pools">Two response pools</h3>
 <p>Nearly every Quiz/Question Analytics calculation uses one of two "pools" of response rows:</p>
@@ -74,7 +75,12 @@ h = n^{-1/(d+4)}\,\sigma \qquad (d = 1 \text{ for a single time dimension})
 </ul>
 <h3 id="question-analytics-per-quiz">Question Analytics (per quiz)</h3>
 <ul>
-<li><p><strong>Quiz snapshot</strong> — attempt counts and the overall average, read from Moodle's own attempt data (<code>AVG(sumgrades)</code>, rescaled the same way Moodle's own Quiz Overview page does it) — not self-computed.</p></li>
+<li><p><strong>Quiz snapshot</strong> — attempt counts and two overall averages, both read from Moodle's own data, not self-computed:</p>
+<ul>
+<li><strong>"Overall average (per attempt)"</strong> — <code>AVG(sumgrades)</code> over finished attempts, rescaled the same way Moodle's own Quiz Overview page does it. Averages every finished <em>attempt</em> as its own row.</li>
+<li><strong>"Overall average (per student, Gradebook)"</strong> — <code>AVG(finalgrade)</code> from <code>grade_grades</code> for this quiz's own gradebook item — the same number the Grades page shows. Averages one already-aggregated grade per <em>student</em>, collapsed from however many attempts they made via the quiz's own Grading method setting (highest/average/first/last attempt).</li>
+</ul>
+<p>Shown side by side rather than one replacing the other: they only agree when every student has exactly one attempt, and otherwise answer genuinely different questions — a lecturer comparing this page against the Grades page would otherwise read a mismatch between the two as a bug.</p></li>
 <li><p><strong>Question Response Overview</strong> — one bar per question showing the split of <code>correct</code> / <code>incorrect</code> / <code>invalid</code> / <code>no_response</code> (one row per student, their most-recent reached attempt). <strong>The mean mark shown is read directly from Moodle's own cached Facility Index</strong> (<code>quiz_statistics_report</code>), not recomputed — so this always agrees with Quiz → Results → Statistics.</p></li>
 <li><p><strong>Question Review</strong> — responses grouped by <strong>instantiated variant</strong>: two attempts are treated as "the same version" of a randomized question only if both their rendered question text and right-answer text match exactly. Wrong responses within a version are tallied by exact text and sorted by frequency. A genuinely blank response shows as <code>(No response)</code>, never Moodle's raw internal bookkeeping text.</p></li>
 <li><p><strong>Difficulty &amp; discrimination</strong> (computed, though not currently surfaced on this simplified page — see <a href="#hidden--not-shown-on-screen-today">below</a>) — the classic Kelley 27% top/bottom-group method: students are ranked by grade, the top and bottom 27% (<code>round(0.27 × n)</code>, minimum 1 student each) form two cohorts:</p>

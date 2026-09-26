@@ -41,9 +41,9 @@
 <h2 id="question-analytics">Question Analytics</h2>
 <p>Pick a quiz from the dropdown (defaults to the course's first STACK quiz) to see:</p>
 <ul>
-<li><strong>Quiz snapshot</strong> — attempt counts (finished/in-progress/other) and the overall average, read straight from Moodle's own attempt data.</li>
+<li><strong>Quiz snapshot</strong> — attempt counts (finished/in-progress/other) and two overall averages, both read straight from Moodle's own data: one matching Quiz → Results → Overview (per attempt), one matching the Grades page (per student, via this quiz's own Grading method).</li>
 <li><strong>Question Response Overview</strong> — one chart per question, sized to Moodle's own Facility Index and mean mark (the same numbers Quiz → Results → Statistics shows), not a separately-computed figure.</li>
-<li><strong>Question Review</strong> — click into a question to see its expected answer and common response patterns grouped by instantiated variant, with the question text rendered as real HTML.</li>
+<li><strong>Question Review</strong> — click into a question to see its expected answer, a "Response analysis" table of the most common incorrect responses for that variant, and a dynamic link to that question's own STACK dashboard (follows whichever question is currently selected), with the question text rendered as real HTML.</li>
 </ul>
 <p><strong>Solution Process Visualization</strong> (PRT transition graphs, network features, response-tree distance charts, cross-attempt comparison) is fully implemented but temporarily not offered in the on-screen <strong>View:</strong> selector, pending a redesign. It's still reachable directly:</p>
 <pre><code>local/quizanalytics/questionanalytics.php?id=&lt;courseid&gt;&amp;quizid=&lt;quizid&gt;&amp;view=solutionprocess</code></pre>
